@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyTick - Habit Tracker & Daily Log</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Login/Register Section -->
+    <div id="authSection" class="min-h-screen flex items-center justify-center">
+        <!-- Login Form -->
+        <div id="loginForm" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="text-4xl mb-2">📊</div>
+                <h1 class="text-2xl font-bold text-gray-800">DailyTick</h1>
+                <p class="text-gray-600 text-sm">Habit Tracker & Daily Log</p>
+            </div>
+            
+            <form id="loginFormElement" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="loginEmail" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="correo@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="loginPassword" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="••••••••">
+                </div>
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-medium">
+                    [ ENTRAR ]
+                </button>
+            </form>
+            
+            <p class="text-center mt-4 text-sm text-gray-600">
+                ¿No tienes cuenta? 
+                <button id="showRegister" class="text-blue-600 hover:underline">Regístrate</button>
+            </p>
+        </div>
+
+        <!-- Register Form -->
+        <div id="registerForm" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md hidden">
+            <div class="text-center mb-8">
+                <div class="text-4xl mb-2">📊</div>
+                <h1 class="text-2xl font-bold text-gray-800">DailyTick</h1>
+                <p class="text-gray-600 text-sm">Crea tu cuenta</p>
+            </div>
+            
+            <form id="registerFormElement" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                    <input type="text" id="registerName" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Tu nombre">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="registerEmail" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="correo@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="registerPassword" required minlength="6"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="••••••••">
+                </div>
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-medium">
+                    [ REGISTRARSE ]
+                </button>
+            </form>
+            
+            <p class="text-center mt-4 text-sm text-gray-600">
+                ¿Ya tienes cuenta? 
+                <button id="showLogin" class="text-blue-600 hover:underline">Inicia sesión</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- Main App Section -->
+    <div id="appSection" class="hidden min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg">
+            <div class="p-6 border-b">
+                <div class="flex items-center space-x-2">
+                    <span class="text-2xl">📊</span>
+                    <span class="font-bold text-xl text-gray-800">DailyTick</span>
+                </div>
+            </div>
+            
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <button id="navHome" class="nav-btn w-full text-left px-4 py-2 rounded-lg bg-blue-50 text-blue-600 font-medium">
+                            🏠 Inicio
+                        </button>
+                    </li>
+                    <li>
+                        <button id="navHabits" class="nav-btn w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
+                            ✅ Hábitos
+                        </button>
+                    </li>
+                    <li>
+                        <button id="navStats" class="nav-btn w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
+                            📈 Estadísticas
+                        </button>
+                    </li>
+                    <li>
+                        <button id="navCalendar" class="nav-btn w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
+                            📅 Calendario
+                        </button>
+                    </li>
+                    <li>
+                        <button id="navSettings" class="nav-btn w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
+                            ⚙️ Ajustes
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="absolute bottom-0 w-64 p-4 border-t">
+                <button id="logoutBtn" class="w-full text-left px-4 py-2 rounded-lg hover:bg-red-50 text-red-600">
+                    🚪 Cerrar sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <!-- Home Section -->
+            <div id="homeSection">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800" id="currentDate">Hoy - Lunes 23</h1>
+                        <p class="text-gray-600" id="progressCounter">0/0 completados</p>
+                    </div>
+                </div>
+                
+                <div id="habitsList" class="space-y-3">
+                    <!-- Habits will be loaded here -->
+                </div>
+                
+                <button id="addHabitBtn" class="mt-6 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium">
+                    [+ AGREGAR HÁBITO]
+                </button>
+            </div>
+
+            <!-- Habits Section -->
+            <div id="habitsSection" class="hidden">
+                <h1 class="text-2xl font-bold text-gray-800 mb-6">Mis Hábitos</h1>
+                <div id="allHabitsList" class="space-y-3">
+                    <!-- All habits will be loaded here -->
+                </div>
+                <button id="addNewHabitBtn" class="mt-6 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium">
+                    [+ NUEVO HÁBITO]
+                </button>
+            </div>
+
+            <!-- Stats Section -->
+            <div id="statsSection" class="hidden">
+                <h1 class="text-2xl font-bold text-gray-800 mb-6">Estadísticas</h1>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Racha actual</h3>
+                        <p class="text-3xl font-bold text-orange-500" id="currentStreak">0 días 🔥</p>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Tasa de cumplimiento</h3>
+                        <p class="text-3xl font-bold text-green-500" id="completionRate">0%</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            <div id="completionBar" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Completados esta semana</h3>
+                    <div id="weeklyChart" class="flex justify-between items-end h-40">
+                        <!-- Weekly chart will be rendered here -->
+                    </div>
+                </div>
+                
+                <button id="achievementsBtn" class="mt-6 w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition font-medium">
+                    LOGROS
+                </button>
+                
+                <!-- Level Progress -->
+                <div class="mt-6 bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Tu Progreso</h3>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600">Nivel <span id="currentLevel">1</span></span>
+                        <span class="text-gray-600"><span id="currentPoints">0</span> puntos</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div id="levelProgressBar" class="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2" id="levelProgressText">0/100 puntos para el siguiente nivel</p>
+                </div>
+            </div>
+
+            <!-- Calendar Section -->
+            <div id="calendarSection" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800">Calendario</h1>
+                    <div class="flex space-x-2">
+                        <button id="prevMonthBtn" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">◀</button>
+                        <span id="currentMonthYear" class="text-lg font-medium px-4">Enero 2024</span>
+                        <button id="nextMonthBtn" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">▶</button>
+                    </div>
+                </div>
+                <div id="calendarView" class="bg-white p-6 rounded-lg shadow">
+                    <!-- Calendar will be rendered here -->
+                </div>
+                <div id="dayDetails" class="mt-6 bg-white p-6 rounded-lg shadow hidden">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4" id="selectedDateTitle">Detalles del día</h3>
+                    <div id="dayHabitsList" class="space-y-2">
+                        <!-- Day habits will be shown here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settingsSection" class="hidden">
+                <h1 class="text-2xl font-bold text-gray-800 mb-6">Ajustes</h1>
+                
+                <!-- Profile Settings -->
+                <div class="bg-white p-6 rounded-lg shadow mb-6">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">Perfil</h2>
+                    <form id="profileForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                            <input type="text" id="profileName" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="profileEmail" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <button type="submit"
+                            class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            Guardar cambios
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Password Settings -->
+                <div class="bg-white p-6 rounded-lg shadow mb-6">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">Seguridad</h2>
+                    <form id="passwordForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña actual</label>
+                            <input type="password" id="currentPassword" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
+                            <input type="password" id="newPassword" required minlength="6"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <button type="submit"
+                            class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            Cambiar contraseña
+                        </button>
+                    </form>
+                </div>
+
+                <!-- App Settings -->
+                <div class="bg-white p-6 rounded-lg shadow mb-6">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">Preferencias</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-800">Tema</p>
+                                <p class="text-sm text-gray-600">Selecciona el tema de la aplicación</p>
+                            </div>
+                            <select id="themeSelect"
+                                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="light">Claro</option>
+                                <option value="dark">Oscuro</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-800">Notificaciones</p>
+                                <p class="text-sm text-gray-600">Recibir recordatorios de hábitos</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="notificationsToggle" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        <button id="saveSettingsBtn"
+                            class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            Guardar preferencias
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="bg-red-50 p-6 rounded-lg shadow border border-red-200">
+                    <h2 class="text-lg font-semibold text-red-800 mb-4">Zona de peligro</h2>
+                    <p class="text-sm text-red-600 mb-4">Esta acción es irreversible. Todos tus datos serán eliminados permanentemente.</p>
+                    <button id="deleteAccountBtn"
+                        class="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition">
+                        Eliminar cuenta
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Habit Creation Modal -->
+    <div id="habitModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Hábito Nuevo</h2>
+            
+            <form id="habitForm" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+                    <input type="text" id="habitName" required
+                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="Nombre del hábito">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Emoji</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="habitEmoji" maxlength="2"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl transition"
+                                placeholder="✓">
+                            <button type="button" id="emojiPickerBtn" class="px-4 py-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition font-medium">+</button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
+                        <select id="habitCategory"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            <option value="Otro">Otro</option>
+                            <option value="Salud">🍎 Salud</option>
+                            <option value="Productividad">💡 Productividad</option>
+                            <option value="Aprendizaje">📚 Aprendizaje</option>
+                            <option value="Bienestar">🧘 Bienestar</option>
+                            <option value="Finanzas">💰 Finanzas</option>
+                            <option value="Relaciones">❤️ Relaciones</option>
+                            <option value="Creatividad">🎨 Creatividad</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Frecuencia</label>
+                    <div class="grid grid-cols-7 gap-2">
+                        <label class="flex flex-col items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 transition freq-day">
+                            <input type="checkbox" value="L" class="freq-checkbox hidden">
+                            <span class="text-sm font-medium">L</span>
+                        </label>
+                        <label class="flex flex-col items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 transition freq-day">
+                            <input type="checkbox" value="M" class="freq-checkbox hidden">
+                            <span class="text-sm font-medium">M</span>
+                        </label>
+                        <label class="flex flex-col items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 transition freq-day">
+                            <input type="checkbox" value="X" class="freq-checkbox hidden">
+                            <span class="text-sm font-medium">X</span>
+                        </label>
+                        <label class="flex flex-col items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 transition freq-day">
+                            <input type="checkbox" value="J" class="freq-checkbox hidden">
+                            <span class="text-sm font-medium">J</span>
+                        </label>
+                        <label class="flex flex-col items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 transition freq-day">
+                            <input type="checkbox" value="V" class="freq-checkbox hidden">
+                            <span class="text-sm font-medium">V</span>
+                        </label>
+                        <label class="flex flex-col items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 transition freq-day">
+                            <input type="checkbox" value="S" class="freq-checkbox hidden">
+                            <span class="text-sm font-medium">S</span>
+                        </label>
+                        <label class="flex flex-col items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 transition freq-day">
+                            <input type="checkbox" value="D" class="freq-checkbox hidden">
+                            <span class="text-sm font-medium">D</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Duración</label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="habitDuration" min="1" value="1"
+                            class="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <select id="habitDurationUnit"
+                            class="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            <option value="min">min</option>
+                            <option value="seg">seg</option>
+                            <option value="horas">horas</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit"
+                        class="flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition font-medium shadow-lg hover:shadow-xl">
+                        Crear Hábito
+                    </button>
+                    <button type="button" id="cancelHabitBtn"
+                        class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 transition font-medium">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="fixed top-4 right-4 space-y-2"></div>
+
+    <!-- Achievements Modal -->
+    <div id="achievementsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">🏆 Logros</h2>
+                <button id="closeAchievementsBtn" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            
+            <div id="achievementsList" class="space-y-3">
+                <!-- Achievements will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Emoji Picker Modal -->
+    <div id="emojiPickerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Seleccionar Emoji</h3>
+                <button id="closeEmojiPicker" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            
+            <div id="emojiGrid" class="grid grid-cols-8 gap-2 max-h-60 overflow-y-auto">
+                <!-- Emojis will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

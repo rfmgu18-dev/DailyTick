@@ -1,0 +1,203 @@
+/* Custom Styles for DailyTick */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navigation styles */
+.nav-btn.active {
+    background-color: #eff6ff;
+    color: #2563eb;
+    font-weight: 600;
+}
+
+/* Habit checkbox styles - with emoji support */
+.habit-checkbox {
+    appearance: none;
+    width: 32px;
+    height: 32px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.habit-checkbox:hover {
+    border-color: #2563eb;
+    transform: scale(1.05);
+}
+
+.habit-checkbox:checked {
+    background-color: #2563eb;
+    border-color: #2563eb;
+    animation: checkPop 0.3s ease;
+}
+
+@keyframes checkPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.habit-checkbox:checked::after {
+    content: attr(data-emoji);
+    position: absolute;
+    color: white;
+    font-size: 18px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Habit card styles - more minimalist */
+.habit-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.habit-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: #2563eb;
+}
+
+.habit-card.completed {
+    background-color: #f0fdf4;
+    border-color: #22c55e;
+    border-left: 4px solid #22c55e;
+}
+
+/* Alert styles */
+.alert {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.alert-success {
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.alert-error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.alert-info {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+/* Modal styles */
+.modal {
+    transition: opacity 0.3s;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Chart bars */
+.chart-bar {
+    transition: height 0.5s ease-out;
+}
+
+/* Sidebar positioning */
+aside {
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+main {
+    margin-left: 16rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    aside {
+        position: relative;
+        width: 100%;
+        height: auto;
+    }
+    
+    main {
+        margin-left: 0;
+    }
+    
+    .nav-btn {
+        padding: 0.75rem;
+    }
+}
+
+/* Frequency day selection styles */
+.freq-day {
+    transition: all 0.2s ease;
+}
+
+.freq-day:hover {
+    border-color: #93c5fd;
+}
+
+/* Smooth transitions for all interactive elements */
+button, input, select, .habit-card {
+    transition: all 0.2s ease;
+}
+
+/* Add subtle animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.habit-card {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Improved modal animations */
+#habitModal, #achievementsModal {
+    transition: opacity 0.3s ease;
+}
+
+#habitModal > div, #achievementsModal > div {
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
