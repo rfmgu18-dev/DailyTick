@@ -1,23 +1,47 @@
-/* Custom Styles for DailyTick */
+/* Custom Styles for DailyTick - Modern, Warm, Minimalist */
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
-/* Navigation styles */
+/* Modern color palette - warm and minimalist */
+:root {
+    --primary-green: #10b981;
+    --secondary-green: #059669;
+    --accent-warm: #f59e0b;
+    --bg-warm: #fffbeb;
+    --text-warm: #1f2937;
+    --border-warm: #e5e7eb;
+}
+
+/* Navigation styles - warm minimalist */
 .nav-btn.active {
-    background-color: #eff6ff;
-    color: #2563eb;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+    color: white;
     font-weight: 600;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
 }
 
-/* Habit checkbox styles - with emoji support */
+.nav-btn {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+
+.nav-btn:hover {
+    background-color: var(--bg-warm);
+    color: var(--text-warm);
+}
+
+/* Habit checkbox styles - warm and modern */
 .habit-checkbox {
     appearance: none;
     width: 32px;
     height: 32px;
-    border: 2px solid #d1d5db;
-    border-radius: 8px;
+    border: 2px solid var(--border-warm);
+    border-radius: 12px;
     cursor: pointer;
     position: relative;
     transition: all 0.3s ease;
@@ -25,22 +49,25 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 18px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .habit-checkbox:hover {
-    border-color: #2563eb;
+    border-color: var(--primary-green);
     transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .habit-checkbox:checked {
-    background-color: #2563eb;
-    border-color: #2563eb;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+    border-color: var(--primary-green);
     animation: checkPop 0.3s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 @keyframes checkPop {
     0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
+    50% { transform: scale(1.15); }
     100% { transform: scale(1); }
 }
 
@@ -54,24 +81,26 @@ body {
     transform: translate(-50%, -50%);
 }
 
-/* Habit card styles - more minimalist */
+/* Habit card styles - warm minimalist */
 .habit-card {
     transition: all 0.3s ease;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 1rem;
+    border: 1px solid var(--border-warm);
+    border-radius: 16px;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .habit-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    border-color: #2563eb;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-green);
 }
 
 .habit-card.completed {
-    background-color: #f0fdf4;
-    border-color: #22c55e;
-    border-left: 4px solid #22c55e;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: var(--primary-green);
+    border-left: 4px solid var(--primary-green);
 }
 
 /* Alert styles */
@@ -114,6 +143,12 @@ body {
 /* Modal styles */
 .modal {
     transition: opacity 0.3s;
+}
+
+/* Modal backgrounds with blur effect */
+#habitModal, #achievementsModal, #emojiPickerModal {
+    backdrop-filter: blur(8px);
+    background-color: rgba(0, 0, 0, 0.4);
 }
 
 /* Loading spinner */
@@ -186,6 +221,68 @@ button, input, select, .habit-card {
 
 .habit-card {
     animation: fadeIn 0.3s ease;
+}
+
+/* Dark mode styles */
+body.bg-gray-900 .bg-white {
+    background-color: #1f2937 !important;
+    color: #f3f4f6 !important;
+}
+
+body.bg-gray-900 .text-gray-800 {
+    color: #f3f4f6 !important;
+}
+
+body.bg-gray-900 .text-gray-700 {
+    color: #e5e7eb !important;
+}
+
+body.bg-gray-900 .text-gray-600 {
+    color: #d1d5db !important;
+}
+
+body.bg-gray-900 .text-gray-500 {
+    color: #9ca3af !important;
+}
+
+body.bg-gray-900 .border-gray-200 {
+    border-color: #374151 !important;
+}
+
+body.bg-gray-900 .border-gray-300 {
+    border-color: #4b5563 !important;
+}
+
+body.bg-gray-900 .bg-gray-50 {
+    background-color: #374151 !important;
+}
+
+body.bg-gray-900 .bg-gray-100 {
+    background-color: #4b5563 !important;
+}
+
+body.bg-gray-900 .bg-gray-200 {
+    background-color: #6b7280 !important;
+}
+
+body.bg-gray-900 .hover\:bg-gray-100:hover {
+    background-color: #4b5563 !important;
+}
+
+body.bg-gray-900 .hover\:bg-gray-200:hover {
+    background-color: #6b7280 !important;
+}
+
+body.bg-gray-900 .hover\:bg-gray-300:hover {
+    background-color: #9ca3af !important;
+}
+
+body.bg-gray-900 .shadow {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.bg-gray-900 .shadow-xl {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Improved modal animations */

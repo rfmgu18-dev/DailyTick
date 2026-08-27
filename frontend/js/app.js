@@ -77,6 +77,18 @@ function setupEventListeners() {
     // Achievements modal
     document.getElementById('achievementsBtn').addEventListener('click', showAchievementsModal);
     document.getElementById('closeAchievementsBtn').addEventListener('click', hideAchievementsModal);
+    
+    // Custom achievements tabs
+    document.getElementById('systemAchievementsTab').addEventListener('click', () => showAchievementsTab('system'));
+    document.getElementById('customAchievementsTab').addEventListener('click', () => showAchievementsTab('custom'));
+    document.getElementById('createCustomAchievementBtn').addEventListener('click', () => {
+        showAchievementsTab('custom');
+        showCustomAchievementCreator();
+    });
+    
+    // Custom achievement form
+    document.getElementById('customAchievementForm').addEventListener('submit', handleCreateCustomAchievement);
+    document.getElementById('cancelCustomAchievement').addEventListener('click', hideCustomAchievementCreator);
 
     // Settings forms
     document.getElementById('profileForm').addEventListener('submit', handleUpdateProfile);
@@ -291,11 +303,66 @@ function renderAllHabits(habits) {
                         <p class="text-sm text-gray-500">${habit.category} • ${habit.frequency.join(', ')}</p>
                     </div>
                 </div>
-                <button onclick="deleteHabit('${habit._id}')" class="text-red-500 hover:text-red-700">🗑️</button>
+                <div class="relative">
+                    <button onclick="toggleHabitMenu('${habit._id}')" class="text-gray-500 hover:text-gray-700 text-xl">⋮</button>
+                    <div id="habitMenu-${habit._id}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
+                        <button onclick="editHabit('${habit._id}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-t-lg">✏️ Modificar Hábito</button>
+                        <button onclick="deleteHabit('${habit._id}')" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 rounded-b-lg">🗑️ Eliminar Hábito</button>
+                    </div>
+                </div>
             </div>
         `;
         container.appendChild(card);
     });
+}
+
+// Toggle habit menu
+function toggleHabitMenu(habitId) {
+    const menu = document.getElementById(`habitMenu-${habitId}`);
+    const allMenus = document.querySelectorAll('[id^="habitMenu-"]');
+    
+    // Close all other menus
+    allMenus.forEach(m => {
+        if (m.id !== `habitMenu-${habitId}`) {
+            m.classList.add('hidden');
+        }
+    });
+    
+    // Toggle current menu
+    menu.classList.toggle('hidden');
+}
+
+// Edit habit (opens the habit modal with existing data)
+function editHabit(habitId) {
+    // Find the habit data
+    fetch(`${API_URL}/habits`)
+        .then(response => response.json())
+        .then(data => {
+            const habit = data.habits.find(h => h._id === habitId);
+            if (habit) {
+                // Populate the form with existing data
+                document.getElementById('habitName').value = habit.name;
+                document.getElementById('habitEmoji').value = habit.emoji;
+                document.getElementById('habitCategory').value = habit.category;
+                document.getElementById('habitDuration').value = habit.duration.value;
+                document.getElementById('habitDurationUnit').value = habit.duration.unit;
+                
+                // Set frequency checkboxes
+                document.querySelectorAll('.freq-checkbox').forEach(cb => {
+                    cb.checked = habit.frequency.includes(cb.value);
+                    cb.dispatchEvent(new Event('change'));
+                });
+                
+                // Store the habit ID for updating
+                document.getElementById('habitForm').dataset.editingHabitId = habitId;
+                
+                // Change the form behavior to update instead of create
+                const submitBtn = document.querySelector('#habitForm button[type="submit"]');
+                submitBtn.textContent = 'Actualizar Hábito';
+                
+                showHabitModal();
+            }
+        });
 }
 
 // Toggle habit completion
@@ -336,6 +403,9 @@ async function deleteHabit(habitId) {
 
         if (response.ok) {
             showAlert('Hábito eliminado', 'success');
+            // Close the menu
+            const menu = document.getElementById(`habitMenu-${habitId}`);
+            if (menu) menu.classList.add('hidden');
             loadAllHabits();
         }
     } catch (error) {
@@ -354,6 +424,16 @@ function hideHabitModal() {
     habitModal.classList.add('hidden');
     habitModal.classList.remove('flex');
     document.getElementById('habitForm').reset();
+    
+    // Reset editing state
+    const form = document.getElementById('habitForm');
+    delete form.dataset.editingHabitId;
+    
+    // Reset button text
+    const submitBtn = document.querySelector('#habitForm button[type="submit"]');
+    submitBtn.textContent = 'Crear Hábito';
+    
+    // Reset frequency checkboxes
     document.querySelectorAll('.freq-checkbox').forEach(cb => {
         cb.checked = true;
         cb.dispatchEvent(new Event('change'));
@@ -382,21 +462,46 @@ async function handleCreateHabit(e) {
         return;
     }
 
-    try {
-        const response = await fetch(`${API_URL}/habits`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, emoji, category, frequency, duration })
-        });
+    const form = document.getElementById('habitForm');
+    const editingHabitId = form.dataset.editingHabitId;
 
-        const data = await response.json();
+    try {
+        let response, data;
+
+        if (editingHabitId) {
+            // Update existing habit
+            response = await fetch(`${API_URL}/habits/${editingHabitId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, emoji, category, frequency, duration })
+            });
+            data = await response.json();
+
+            if (response.ok) {
+                showAlert('Hábito actualizado exitosamente', 'success');
+            } else {
+                showAlert(data.message || 'Error al actualizar hábito', 'error');
+            }
+        } else {
+            // Create new habit
+            response = await fetch(`${API_URL}/habits`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, emoji, category, frequency, duration })
+            });
+            data = await response.json();
+
+            if (response.ok) {
+                showAlert('Hábito creado exitosamente', 'success');
+            } else {
+                showAlert(data.message || 'Error al crear hábito', 'error');
+            }
+        }
 
         if (response.ok) {
-            showAlert('Hábito creado exitosamente', 'success');
             hideHabitModal();
             loadTodayHabits();
-        } else {
-            showAlert(data.message || 'Error al crear hábito', 'error');
+            loadAllHabits();
         }
     } catch (error) {
         showAlert('Error de conexión', 'error');
@@ -531,6 +636,163 @@ async function showAchievementsModal() {
     
     await loadAchievements();
     await loadLevelProgress();
+}
+
+// Show achievements tab
+function showAchievementsTab(tab) {
+    const systemTab = document.getElementById('systemAchievementsTab');
+    const customTab = document.getElementById('customAchievementsTab');
+    const creator = document.getElementById('customAchievementCreator');
+    
+    if (tab === 'system') {
+        systemTab.classList.add('border-green-500', 'text-green-600');
+        systemTab.classList.remove('border-transparent', 'text-gray-500');
+        customTab.classList.remove('border-green-500', 'text-green-600');
+        customTab.classList.add('border-transparent', 'text-gray-500');
+        creator.classList.add('hidden');
+        loadAchievements();
+    } else {
+        customTab.classList.add('border-green-500', 'text-green-600');
+        customTab.classList.remove('border-transparent', 'text-gray-500');
+        systemTab.classList.remove('border-green-500', 'text-green-600');
+        systemTab.classList.add('border-transparent', 'text-gray-500');
+        creator.classList.remove('hidden');
+        loadCustomAchievements();
+    }
+}
+
+// Load custom achievements
+async function loadCustomAchievements() {
+    try {
+        const response = await fetch(`${API_URL}/achievements/custom`);
+        const data = await response.json();
+
+        if (response.ok) {
+            renderCustomAchievements(data.customAchievements);
+        }
+    } catch (error) {
+        console.error('Error loading custom achievements:', error);
+    }
+}
+
+// Render custom achievements
+function renderCustomAchievements(achievements) {
+    const container = document.getElementById('achievementsList');
+    container.innerHTML = '';
+
+    if (achievements.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">No tienes logros personalizados. ¡Crea el primero!</p>';
+        return;
+    }
+
+    achievements.forEach(achievement => {
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-lg border-2 ${achievement.unlocked ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`;
+        card.innerHTML = `
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <span class="text-4xl">${achievement.icon}</span>
+                    <div>
+                        <h3 class="font-bold text-gray-800">${achievement.name}</h3>
+                        <p class="text-sm text-gray-600">${achievement.description}</p>
+                        <p class="text-xs text-purple-600 font-medium">+${achievement.points} puntos</p>
+                        <p class="text-xs text-gray-500">${achievement.currentValue}/${achievement.targetValue} ${achievement.metric}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    ${achievement.unlocked 
+                        ? '<span class="text-green-600 font-bold">✓ Desbloqueado</span>' 
+                        : `<button onclick="unlockCustomAchievement('${achievement.id}')" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm">Desbloquear</button>`}
+                    <button onclick="deleteCustomAchievement('${achievement.id}')" class="text-red-500 hover:text-red-700 text-xl">×</button>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// Create custom achievement
+async function handleCreateCustomAchievement(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('customAchievementName').value;
+    const description = document.getElementById('customAchievementDescription').value;
+    const icon = document.getElementById('customAchievementIcon').value || '🏆';
+    const points = parseInt(document.getElementById('customAchievementPoints').value);
+    const targetValue = parseInt(document.getElementById('customAchievementTarget').value);
+    const metric = document.getElementById('customAchievementMetric').value;
+
+    try {
+        const response = await fetch(`${API_URL}/achievements/custom`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, description, icon, points, targetValue, metric })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showAlert('Logro personalizado creado', 'success');
+            document.getElementById('customAchievementForm').reset();
+            loadCustomAchievements();
+        } else {
+            showAlert(data.message || 'Error al crear logro personalizado', 'error');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+// Unlock custom achievement
+async function unlockCustomAchievement(achievementId) {
+    try {
+        const response = await fetch(`${API_URL}/achievements/custom/${achievementId}/unlock`, {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showAlert('Logro desbloqueado', 'success');
+            loadCustomAchievements();
+            loadLevelProgress();
+        } else {
+            showAlert(data.message || 'Error al desbloquear logro', 'error');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+// Delete custom achievement
+async function deleteCustomAchievement(achievementId) {
+    if (!confirm('¿Estás seguro de eliminar este logro personalizado?')) return;
+
+    try {
+        const response = await fetch(`${API_URL}/achievements/custom/${achievementId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            showAlert('Logro eliminado', 'success');
+            loadCustomAchievements();
+        } else {
+            showAlert('Error al eliminar logro', 'error');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+// Show custom achievement creator
+function showCustomAchievementCreator() {
+    document.getElementById('customAchievementCreator').classList.remove('hidden');
+}
+
+// Hide custom achievement creator
+function hideCustomAchievementCreator() {
+    document.getElementById('customAchievementCreator').classList.add('hidden');
+    document.getElementById('customAchievementForm').reset();
 }
 
 // Hide achievements modal
@@ -879,16 +1141,82 @@ function applyTheme(theme) {
 
 // Emoji picker functionality
 const commonEmojis = [
-    '✓', '✅', '❌', '⭐', '🌟', '💫', '🔥', '💪', '🎯', '🏆',
-    '📚', '💡', '🧠', '💻', '🎨', '🎵', '🏃', '🧘', '🍎', '🥗',
-    '💧', '😴', '🌅', '🌙', '☀️', '🌧️', '❄️', '🌸', '🍀', '🌺',
-    '🎁', '🎈', '🎉', '🎊', '🔔', '⏰', '📱', '💻', '🖥️', '⌨️',
-    '🖱️', '📷', '📸', '🎥', '📺', '📻', '🎵', '🎶', '🎧', '📻',
-    '✏️', '📝', '📁', '📂', '🗂️', '📅', '📆', '🗓️', '📇', '🗃️',
-    '🏠', '🏡', '🏢', '🏣', '🏤', '🏥', '🏦', '🏨', '🏩', '🏪',
-    '🏫', '🏬', '🏭', '🏯', '🏰', '💒', '🗼', '🗽', '⛪', '🕌',
-    '🛕', '🕍', '⛩️', '🕋', '⛲', '⛺', '🌁', '🌃', '🏙️', '🌄',
-    '🌅', '🌆', '🌇', '🌉', '♨️', '🎠', '🎡', '🎢', '💈', '🎪'
+    // Checkmarks & Success
+    '✓', '✅', '❌', '⭕', '🔘', '🔳', '🔲',
+    
+    // Stars & Awards
+    '⭐', '🌟', '💫', '✨', '🌙', '☀️', '🌞', '🔥', '💪', '🎯', '🏆', '🥇', '🥈', '🥉', '🎖️', '🏅',
+    
+    // Learning & Mind
+    '📚', '💡', '🧠', '🎓', '📖', '�', '✏️', '📐', '📏', '🎨', '�', '🎪', '🎬', '🎤', '🎧',
+    
+    // Health & Wellness
+    '🏃', '🚶', '🧘', '🧗', '🏊', '🚴', '⛹️', '�', '🤾', '🏋️', '🧖', '�🧘', '🍎', '🥗', '🥑', '🥦', '🥕',
+    '💧', '🥤', '🥛', '☕', '🍵', '🥣', '🍲', '🥘', '🍝', '🍜', '🍲', '🥗', '🍱', '🥪', '🌮', '�',
+    
+    // Nature & Weather
+    '�🌅', '�', '🌆', '🌇', '🌉', '�🌙', '☀️', '🌧️', '❄️', '⚡', '�', '�🌸', '🌺', '🌻', '🌹', '🌷', '�',
+    '🌲', '🌳', '�🍀', '🍁', '🍂', '🍃', '🌿', '☘️', '🍄', '🌵', '🌾', '🌾', '🌽', '🥕', '🥔', '🍠',
+    
+    // Activities & Hobbies
+    '🎮', '🎯', '🎲', '🎳', '🏈', '�', '⚽', '🎾', '🏸', '🏒', '🥎', '🎱', '🏓', '🏸', '🏑', '🏏',
+    '🥊', '🥋', '🥅', '⛳', '⛸️', '�', '🤿', '�', '🛷', '�', '�', '�', '🧗', '🧗', '🧗',
+    
+    // Time & Organization
+    '⏰', '⏱️', '⏲️', '🕰', '🕛', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '�', '🕗', '�', '�', '🕚',
+    '�', '📆', '🗓️', '�', '�️', '📁', '�', '�️', '🗄️', '💾', '💿', '📀', '�️', '�️',
+    
+    // Technology
+    '💻', '🖥️', '�️', '⌨️', '�️', '�️', '�', '💾', '💿', '📀', '📱', '📲', '☎️', '�', '�', '�',
+    '📺', '📻', '🎙️', '🎚️', '🎛️', '🧭', '⏱️', '⏲️', '⏰', '�', '⌚', '�', '🧭',
+    
+    // Home & Daily Life
+    '🏠', '🏡', '🏢', '🏣', '🏤', '🏥', '🏦', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭', '🏯', '🏰', '💒',
+    '🗼', '🗽', '⛪', '🕌', '🛕', '🕍', '⛩️', '🕋', '⛲', '⛺', '🏰', '🏯', '🏟️', '🎪', '🎡',
+    
+    // Travel & Places
+    '🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '🚲', '🚢', '🚁',
+    '✈️', '🚀', '🛸', '🛶', '⛵', '🚤', '🛥', '🛳️', '⛴️', '🚢', '🗺️', '🗿', '🗽', '🗼', '�',
+    
+    // Animals
+    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔',
+    '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋',
+    
+    // Food & Drink
+    '🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅',
+    '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯',
+    
+    // Faces & People
+    '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩',
+    '😘', '😗', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐',
+    
+    // Symbols
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
+    '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎',
+    
+    // More activities
+    '🎁', '🎈', '🎉', '🎊', '🎎', '🎒', '🎓', '🎖️', '🏅', '🎬', '🎤', '🎧', '🎼', '🎹', '🥁', '🎷',
+    '🎺', '🎸', '🪕', '🎻', '🪘', '🎙️', '🎚️', '🎛️', '🎤', '🎧', '📻', '🎷', '🎸', '🎹', '🎺', '🎻',
+    
+    // Fitness & Sports
+    '🤸', '🤼', '🤽', '🤾', '🤹', '🥎', '🤺', '🥏', '🪃', '🥅', '🥊', '🥋', '🥌', '🛹', '🛼', '🛷',
+    '⛸️', '🥌', '🎯', '🪀', '🎳', '🎮', '🕹️', '🎰', '🎲', '🧩', '🧸', '♠️', '♥️', '♦️', '♣️', '♟️',
+    
+    // Office & Work
+    '📅', '📆', '🗓️', '📇', '🗃️', '🗄️', '🗑️', '📒', '📓', '📔', '📕', '📖', '📗', '📘', '📙', '📚',
+    '📓', '📒', '📃', '📜', '📄', '📰', '🗞️', '📑', '🔖', '🏷️', '💰', '💴', '💵', '💶', '💷', '💸',
+    
+    // Nature Extended
+    '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌿', '☘️', '🍀', '🍁', '🍂', '🍃', '🍄', '🌰', '🥜', '🌰',
+    '🐀', '🐁', '🐂', '🐃', '🐄', '🐅', '🐆', '🐇', '🐈', '🐉', '🐊', '🐋', '🐌', '🐍', '🐎', '🐏',
+    
+    // Tools & Objects
+    '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🪓', '🪚', '🔩', '⚙️', '🪤', '🧰', '🪛', '🔫', '💣', '🧨', '🪓',
+    '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '🪦', '⚱️', '�', '🗿', '🗽', '🗼', '🗽', '�️', '�️',
+    
+    // Music & Arts
+    '�', '�', '�️', '�️', '🎛️', '🎤', '🎧', '📻', '🎷', '🎸', '🎹', '🎺', '🎻', '🪕', '🥁', '🪘',
+    '🎬', '🎨', '�', '🖼️', '�', '�️', '�️', '�', '📺', '📷', '📸', '📹', '📼', '🔍', '🔎'
 ];
 
 function showEmojiPicker() {

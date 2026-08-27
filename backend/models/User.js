@@ -44,6 +44,53 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
+  // Logros personalizados del usuario
+  customAchievements: [{
+    id: {
+      type: String,
+      default: () => new mongoose.Types.ObjectId().toString()
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    description: {
+      type: String,
+      required: true
+    },
+    icon: {
+      type: String,
+      default: '🏆'
+    },
+    points: {
+      type: Number,
+      default: 10
+    },
+    unlocked: {
+      type: Boolean,
+      default: false
+    },
+    unlockedAt: {
+      type: Date
+    },
+    targetValue: {
+      type: Number,
+      default: 1
+    },
+    currentValue: {
+      type: Number,
+      default: 0
+    },
+    metric: {
+      type: String,
+      enum: ['habits_completed', 'streak_days', 'total_points'],
+      default: 'habits_completed'
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   // Configuración de usuario
   theme: {
     type: String,

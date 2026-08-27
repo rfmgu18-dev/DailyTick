@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Habit = require('../models/Habit');
 const jwt = require('jsonwebtoken');
 
 // Generar JWT Token
@@ -34,6 +35,30 @@ const register = async (req, res) => {
       email,
       password
     });
+
+    // Crear hábitos predeterminados para nuevos usuarios
+    await Habit.create([
+      {
+        user: user._id,
+        name: 'Beber 2L de agua',
+        emoji: '💧',
+        category: 'Salud',
+        frequency: ['L', 'M', 'X', 'J', 'V', 'S', 'D'],
+        duration: { value: 1, unit: 'horas' },
+        active: true,
+        completions: []
+      },
+      {
+        user: user._id,
+        name: 'Meditar 10 minutos',
+        emoji: '🧘',
+        category: 'Bienestar',
+        frequency: ['L', 'M', 'X', 'J', 'V', 'S', 'D'],
+        duration: { value: 10, unit: 'min' },
+        active: true,
+        completions: []
+      }
+    ]);
 
     // Guardar en sesión
     req.session.userId = user._id;
