@@ -42,6 +42,12 @@ function showAuth() {
 function showApp(user) {
     authSection.classList.add('hidden');
     appSection.classList.remove('hidden');
+    
+    // Change URL to /app when authenticated
+    if (window.location.pathname === '/' || window.location.pathname === '/auth') {
+        window.history.pushState({}, '', '/app');
+    }
+    
     loadTodayHabits();
     updateUserInfo(user);
 }
@@ -77,18 +83,6 @@ function setupEventListeners() {
     // Achievements modal
     document.getElementById('achievementsBtn').addEventListener('click', showAchievementsModal);
     document.getElementById('closeAchievementsBtn').addEventListener('click', hideAchievementsModal);
-    
-    // Custom achievements tabs
-    document.getElementById('systemAchievementsTab').addEventListener('click', () => showAchievementsTab('system'));
-    document.getElementById('customAchievementsTab').addEventListener('click', () => showAchievementsTab('custom'));
-    document.getElementById('createCustomAchievementBtn').addEventListener('click', () => {
-        showAchievementsTab('custom');
-        showCustomAchievementCreator();
-    });
-    
-    // Custom achievement form
-    document.getElementById('customAchievementForm').addEventListener('submit', handleCreateCustomAchievement);
-    document.getElementById('cancelCustomAchievement').addEventListener('click', hideCustomAchievementCreator);
 
     // Settings forms
     document.getElementById('profileForm').addEventListener('submit', handleUpdateProfile);
@@ -584,8 +578,17 @@ function renderWeeklyChart(data) {
 function showMostConsistentHabit(habit) {
     const container = document.getElementById('weeklyChart').parentElement;
     
+    // Eliminar cualquier instancia previa del hábito más consistente
+    const existingHabitInfo = container.querySelector('.most-consistent-habit');
+    if (existingHabitInfo) {
+        existingHabitInfo.remove();
+    }
+    
+    // Solo mostrar si existe un hábito consistente
+    if (!habit) return;
+    
     const habitInfo = document.createElement('div');
-    habitInfo.className = 'mt-4 p-4 bg-green-50 rounded-lg';
+    habitInfo.className = 'most-consistent-habit mt-4 p-4 bg-green-50 rounded-lg';
     habitInfo.innerHTML = `
         <h4 class="font-semibold text-green-800">🏆 Hábito más consistente</h4>
         <p class="text-green-700">${habit.emoji} ${habit.name} - ${habit.rate}% de cumplimiento</p>
@@ -636,163 +639,6 @@ async function showAchievementsModal() {
     
     await loadAchievements();
     await loadLevelProgress();
-}
-
-// Show achievements tab
-function showAchievementsTab(tab) {
-    const systemTab = document.getElementById('systemAchievementsTab');
-    const customTab = document.getElementById('customAchievementsTab');
-    const creator = document.getElementById('customAchievementCreator');
-    
-    if (tab === 'system') {
-        systemTab.classList.add('border-green-500', 'text-green-600');
-        systemTab.classList.remove('border-transparent', 'text-gray-500');
-        customTab.classList.remove('border-green-500', 'text-green-600');
-        customTab.classList.add('border-transparent', 'text-gray-500');
-        creator.classList.add('hidden');
-        loadAchievements();
-    } else {
-        customTab.classList.add('border-green-500', 'text-green-600');
-        customTab.classList.remove('border-transparent', 'text-gray-500');
-        systemTab.classList.remove('border-green-500', 'text-green-600');
-        systemTab.classList.add('border-transparent', 'text-gray-500');
-        creator.classList.remove('hidden');
-        loadCustomAchievements();
-    }
-}
-
-// Load custom achievements
-async function loadCustomAchievements() {
-    try {
-        const response = await fetch(`${API_URL}/achievements/custom`);
-        const data = await response.json();
-
-        if (response.ok) {
-            renderCustomAchievements(data.customAchievements);
-        }
-    } catch (error) {
-        console.error('Error loading custom achievements:', error);
-    }
-}
-
-// Render custom achievements
-function renderCustomAchievements(achievements) {
-    const container = document.getElementById('achievementsList');
-    container.innerHTML = '';
-
-    if (achievements.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-center py-8">No tienes logros personalizados. ¡Crea el primero!</p>';
-        return;
-    }
-
-    achievements.forEach(achievement => {
-        const card = document.createElement('div');
-        card.className = `p-4 rounded-lg border-2 ${achievement.unlocked ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`;
-        card.innerHTML = `
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <span class="text-4xl">${achievement.icon}</span>
-                    <div>
-                        <h3 class="font-bold text-gray-800">${achievement.name}</h3>
-                        <p class="text-sm text-gray-600">${achievement.description}</p>
-                        <p class="text-xs text-purple-600 font-medium">+${achievement.points} puntos</p>
-                        <p class="text-xs text-gray-500">${achievement.currentValue}/${achievement.targetValue} ${achievement.metric}</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                    ${achievement.unlocked 
-                        ? '<span class="text-green-600 font-bold">✓ Desbloqueado</span>' 
-                        : `<button onclick="unlockCustomAchievement('${achievement.id}')" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm">Desbloquear</button>`}
-                    <button onclick="deleteCustomAchievement('${achievement.id}')" class="text-red-500 hover:text-red-700 text-xl">×</button>
-                </div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-// Create custom achievement
-async function handleCreateCustomAchievement(e) {
-    e.preventDefault();
-    
-    const name = document.getElementById('customAchievementName').value;
-    const description = document.getElementById('customAchievementDescription').value;
-    const icon = document.getElementById('customAchievementIcon').value || '🏆';
-    const points = parseInt(document.getElementById('customAchievementPoints').value);
-    const targetValue = parseInt(document.getElementById('customAchievementTarget').value);
-    const metric = document.getElementById('customAchievementMetric').value;
-
-    try {
-        const response = await fetch(`${API_URL}/achievements/custom`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, description, icon, points, targetValue, metric })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showAlert('Logro personalizado creado', 'success');
-            document.getElementById('customAchievementForm').reset();
-            loadCustomAchievements();
-        } else {
-            showAlert(data.message || 'Error al crear logro personalizado', 'error');
-        }
-    } catch (error) {
-        showAlert('Error de conexión', 'error');
-    }
-}
-
-// Unlock custom achievement
-async function unlockCustomAchievement(achievementId) {
-    try {
-        const response = await fetch(`${API_URL}/achievements/custom/${achievementId}/unlock`, {
-            method: 'POST'
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showAlert('Logro desbloqueado', 'success');
-            loadCustomAchievements();
-            loadLevelProgress();
-        } else {
-            showAlert(data.message || 'Error al desbloquear logro', 'error');
-        }
-    } catch (error) {
-        showAlert('Error de conexión', 'error');
-    }
-}
-
-// Delete custom achievement
-async function deleteCustomAchievement(achievementId) {
-    if (!confirm('¿Estás seguro de eliminar este logro personalizado?')) return;
-
-    try {
-        const response = await fetch(`${API_URL}/achievements/custom/${achievementId}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            showAlert('Logro eliminado', 'success');
-            loadCustomAchievements();
-        } else {
-            showAlert('Error al eliminar logro', 'error');
-        }
-    } catch (error) {
-        showAlert('Error de conexión', 'error');
-    }
-}
-
-// Show custom achievement creator
-function showCustomAchievementCreator() {
-    document.getElementById('customAchievementCreator').classList.remove('hidden');
-}
-
-// Hide custom achievement creator
-function hideCustomAchievementCreator() {
-    document.getElementById('customAchievementCreator').classList.add('hidden');
-    document.getElementById('customAchievementForm').reset();
 }
 
 // Hide achievements modal
