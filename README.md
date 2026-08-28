@@ -63,35 +63,6 @@ Una aplicación web FullStack moderna para seguimiento de hábitos, diseñada pa
 - **Autenticación**: Express Sessions + bcrypt
 - **API**: RESTful API completa
 
-## 📦 Instalación
-
-1. **Navegar al directorio del proyecto**
-   ```bash
-   cd C:\www\DailyTick
-   ```
-
-2. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
-
-3. **Configurar variables de entorno**
-   ```bash
-   # El archivo .env ya está configurado con MongoDB Atlas
-   # No necesitas MongoDB local
-   ```
-
-4. **Iniciar el servidor**
-   ```bash
-   npm start
-   # O para desarrollo con auto-reload
-   npm run dev
-   ```
-
-5. **Abrir en el navegador**
-   ```
-   http://localhost:3000
-   ```
 
 ## 📁 Estructura del Proyecto
 
@@ -125,34 +96,6 @@ DailyTick/
 ├── .env                            # Variables de entorno (MongoDB Atlas)
 └── .gitignore                      # Archivos a ignorar en Git
 ```
-
-## 🔐 API Endpoints
-
-### Autenticación
-- `POST /api/auth/register` - Registro de usuario
-- `POST /api/auth/login` - Inicio de sesión
-- `POST /api/auth/logout` - Cierre de sesión
-- `GET /api/auth/me` - Obtener usuario actual
-- `PUT /api/auth/profile` - Actualizar perfil
-- `PUT /api/auth/password` - Cambiar contraseña
-- `PUT /api/auth/settings` - Actualizar configuración
-- `DELETE /api/auth/account` - Eliminar cuenta
-
-### Hábitos
-- `GET /api/habits` - Obtener todos los hábitos del usuario
-- `GET /api/habits/:date` - Obtener hábitos de una fecha específica
-- `POST /api/habits` - Crear nuevo hábito
-- `PUT /api/habits/:habitId/toggle` - Marcar/desmarcar hábito como completado
-- `PUT /api/habits/:habitId` - Actualizar hábito
-- `DELETE /api/habits/:habitId` - Eliminar hábito
-
-### Estadísticas
-- `GET /api/stats` - Obtener estadísticas completas (racha, tasa, gráficos)
-- `GET /api/stats/month/:year/:month` - Obtener datos mensuales para calendario
-
-### Logros
-- `GET /api/achievements` - Obtener logros disponibles y del usuario
-- `GET /api/achievements/level-progress` - Obtener progreso de nivel
 
 ## 🎯 Funcionalidades Implementadas
 
