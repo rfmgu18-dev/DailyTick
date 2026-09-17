@@ -2,19 +2,19 @@ const User = require('../models/User');
 const Habit = require('../models/Habit');
 const jwt = require('jsonwebtoken');
 
-// Generar JWT Token
-const generateToken = (id) => {
+// Generar token JWT
+function generateToken(id) {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'dailytick-jwt-secret', {
     expiresIn: '30d'
   });
-};
+}
 
-// Registro
-const register = async (req, res) => {
+// Registrar nuevo usuario
+async function register(req, res) {
   try {
     const { name, email, password } = req.body;
 
-    // Validaciones
+    // Validar campos
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
@@ -23,20 +23,16 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
     }
 
-    // Verificar si el usuario ya existe
+    // Verificar si usuario ya existe
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'El email ya está registrado' });
     }
 
     // Crear usuario
-    const user = await User.create({
-      name,
-      email,
-      password
-    });
+    const user = await User.create({ name, email, password });
 
-    // Crear hábitos predeterminados para nuevos usuarios
+    // Crear hábitos predeterminados
     await Habit.create([
       {
         user: user._id,
@@ -75,31 +71,27 @@ const register = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error en el servidor', error: error.message });
   }
-};
+}
 
-// Login
-const login = async (req, res) => {
+// Iniciar sesión
+async function login(req, res) {
   try {
     const { email, password } = req.body;
 
-    // Validaciones
     if (!email || !password) {
       return res.status(400).json({ message: 'Email y contraseña son requeridos' });
     }
 
-    // Buscar usuario
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    // Verificar password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    // Guardar en sesión
     req.session.userId = user._id;
 
     res.json({
@@ -117,20 +109,20 @@ const login = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error en el servidor', error: error.message });
   }
-};
+}
 
-// Logout
-const logout = (req, res) => {
+// Cerrar sesión
+function logout(req, res) {
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ message: 'Error al cerrar sesión' });
     }
     res.json({ message: 'Sesión cerrada exitosamente' });
   });
-};
+}
 
 // Obtener usuario actual
-const getCurrentUser = async (req, res) => {
+async function getCurrentUser(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -145,10 +137,10 @@ const getCurrentUser = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error en el servidor', error: error.message });
   }
-};
+}
 
 // Actualizar perfil
-const updateProfile = async (req, res) => {
+async function updateProfile(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -160,7 +152,6 @@ const updateProfile = async (req, res) => {
       return res.status(400).json({ message: 'Nombre y email son requeridos' });
     }
 
-    // Verificar si el email ya está en uso por otro usuario
     const existingUser = await User.findOne({ email, _id: { $ne: req.session.userId } });
     if (existingUser) {
       return res.status(400).json({ message: 'El email ya está en uso' });
@@ -180,10 +171,10 @@ const updateProfile = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al actualizar perfil', error: error.message });
   }
-};
+}
 
 // Cambiar contraseña
-const changePassword = async (req, res) => {
+async function changePassword(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -204,13 +195,11 @@ const changePassword = async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Verificar contraseña actual
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(401).json({ message: 'Contraseña actual incorrecta' });
     }
 
-    // Actualizar contraseña
     user.password = newPassword;
     await user.save();
 
@@ -218,10 +207,10 @@ const changePassword = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al cambiar contraseña', error: error.message });
   }
-};
+}
 
 // Actualizar configuración
-const updateSettings = async (req, res) => {
+async function updateSettings(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -246,10 +235,10 @@ const updateSettings = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al actualizar configuración', error: error.message });
   }
-};
+}
 
 // Eliminar cuenta
-const deleteAccount = async (req, res) => {
+async function deleteAccount(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -266,19 +255,14 @@ const deleteAccount = async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Verificar contraseña
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
 
-    // Eliminar hábitos del usuario
-    await require('../models/Habit').deleteMany({ user: req.session.userId });
-
-    // Eliminar usuario
+    await Habit.deleteMany({ user: req.session.userId });
     await User.findByIdAndDelete(req.session.userId);
 
-    // Destruir sesión
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ message: 'Error al cerrar sesión' });
@@ -289,7 +273,7 @@ const deleteAccount = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al eliminar cuenta', error: error.message });
   }
-};
+}
 
 module.exports = {
   register,

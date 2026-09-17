@@ -3,7 +3,7 @@ const User = require('../models/User');
 const { checkAndUnlockAchievements } = require('./achievementController');
 
 // Obtener todos los hábitos del usuario
-const getHabits = async (req, res) => {
+async function getHabits(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -18,10 +18,10 @@ const getHabits = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener hábitos', error: error.message });
   }
-};
+}
 
 // Crear nuevo hábito
-const createHabit = async (req, res) => {
+async function createHabit(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -46,17 +46,17 @@ const createHabit = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al crear hábito', error: error.message });
   }
-};
+}
 
 // Marcar hábito como completado
-const toggleHabitCompletion = async (req, res) => {
+async function toggleHabitCompletion(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
     }
 
     const { habitId } = req.params;
-    const { date } = req.body; // Fecha en formato ISO (YYYY-MM-DD)
+    const { date } = req.body;
 
     const habit = await Habit.findOne({
       _id: habitId,
@@ -70,36 +70,33 @@ const toggleHabitCompletion = async (req, res) => {
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
 
-    // Buscar si ya existe un registro para esa fecha
+    // Buscar si ya existe registro para esa fecha
     const existingCompletion = habit.completions.find(
       c => new Date(c.date).toDateString() === targetDate.toDateString()
     );
 
     if (existingCompletion) {
-      // Toggle: si existe, cambiar estado
+      // Cambiar estado si existe
       const wasCompleted = existingCompletion.completed;
       existingCompletion.completed = !existingCompletion.completed;
       if (existingCompletion.completed) {
         existingCompletion.completedAt = new Date();
-        // Incrementar contador del usuario
         await User.findByIdAndUpdate(req.session.userId, {
           $inc: { totalHabitsCompleted: 1 }
         });
       } else {
         existingCompletion.completedAt = null;
-        // Decrementar contador del usuario
         await User.findByIdAndUpdate(req.session.userId, {
           $inc: { totalHabitsCompleted: -1 }
         });
       }
     } else {
-      // Si no existe, crear nuevo registro
+      // Crear nuevo registro si no existe
       habit.completions.push({
         date: targetDate,
         completed: true,
         completedAt: new Date()
       });
-      // Incrementar contador del usuario
       await User.findByIdAndUpdate(req.session.userId, {
         $inc: { totalHabitsCompleted: 1 }
       });
@@ -107,7 +104,7 @@ const toggleHabitCompletion = async (req, res) => {
 
     await habit.save();
 
-    // Verificar logros después de completar hábito
+    // Verificar logros
     const newAchievements = await checkAndUnlockAchievements(req.session.userId);
 
     res.json({ 
@@ -118,10 +115,10 @@ const toggleHabitCompletion = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al actualizar hábito', error: error.message });
   }
-};
+}
 
 // Actualizar hábito
-const updateHabit = async (req, res) => {
+async function updateHabit(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -151,10 +148,10 @@ const updateHabit = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al actualizar hábito', error: error.message });
   }
-};
+}
 
 // Eliminar hábito (soft delete)
-const deleteHabit = async (req, res) => {
+async function deleteHabit(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -178,16 +175,16 @@ const deleteHabit = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al eliminar hábito', error: error.message });
   }
-};
+}
 
 // Obtener hábitos de un día específico
-const getHabitsByDate = async (req, res) => {
+async function getHabitsByDate(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
     }
 
-    const { date } = req.params; // Formato: YYYY-MM-DD
+    const { date } = req.params;
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
 
@@ -197,7 +194,7 @@ const getHabitsByDate = async (req, res) => {
     });
 
     // Filtrar por frecuencia y añadir estado de completado
-    const dayOfWeek = targetDate.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+    const dayOfWeek = targetDate.getDay();
     const dayMap = { 0: 'D', 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S' };
     const dayLetter = dayMap[dayOfWeek];
 
@@ -219,7 +216,7 @@ const getHabitsByDate = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener hábitos', error: error.message });
   }
-};
+}
 
 module.exports = {
   getHabits,

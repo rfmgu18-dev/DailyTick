@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const Habit = require('../models/Habit');
 
-// Definición de logros disponibles
+// Logros disponibles del sistema
 const ACHIEVEMENTS = {
   FIRST_HABIT: {
     id: 'first_habit',
@@ -75,8 +75,8 @@ const ACHIEVEMENTS = {
   }
 };
 
-// Obtener todos los logros disponibles y los del usuario
-const getAchievements = async (req, res) => {
+// Obtener logros del usuario
+async function getAchievements(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -103,10 +103,10 @@ const getAchievements = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener logros', error: error.message });
   }
-};
+}
 
 // Verificar y desbloquear logros
-const checkAndUnlockAchievements = async (userId) => {
+async function checkAndUnlockAchievements(userId) {
   try {
     const user = await User.findById(userId);
     const habits = await Habit.find({ user: userId, active: true });
@@ -115,65 +115,41 @@ const checkAndUnlockAchievements = async (userId) => {
 
     const newAchievements = [];
 
-    // Verificar FIRST_HABIT
-    if (habits.length >= 1 && !user.achievements.includes('first_habit')) {
-      user.achievements.push('first_habit');
-      user.points += ACHIEVEMENTS.FIRST_HABIT.points;
-      newAchievements.push(ACHIEVEMENTS.FIRST_HABIT);
+    // Función auxiliar para desbloquear logro
+    function unlockAchievement(achievementKey) {
+      const achievement = ACHIEVEMENTS[achievementKey];
+      if (!user.achievements.includes(achievement.id)) {
+        user.achievements.push(achievement.id);
+        user.points += achievement.points;
+        newAchievements.push(achievement);
+      }
     }
 
-    // Verificar FIRST_WEEK (racha de 7 días)
-    if (user.streak >= 7 && !user.achievements.includes('first_week')) {
-      user.achievements.push('first_week');
-      user.points += ACHIEVEMENTS.FIRST_WEEK.points;
-      newAchievements.push(ACHIEVEMENTS.FIRST_WEEK);
-    }
+    // Verificar diferentes logros
+    if (habits.length >= 1) unlockAchievement('FIRST_HABIT');
+    if (user.streak >= 7) unlockAchievement('FIRST_WEEK');
+    if (user.streak >= 30) unlockAchievement('STREAK_MASTER');
+    if (habits.length >= 10) unlockAchievement('HABIT_EXPLORER');
+    if (user.totalHabitsCompleted >= 100) unlockAchievement('CENTURY_CLUB');
 
-    // Verificar STREAK_MASTER (racha de 30 días)
-    if (user.streak >= 30 && !user.achievements.includes('streak_master')) {
-      user.achievements.push('streak_master');
-      user.points += ACHIEVEMENTS.STREAK_MASTER.points;
-      newAchievements.push(ACHIEVEMENTS.STREAK_MASTER);
-    }
-
-    // Verificar HABIT_MASTER (un hábito completado 30 veces)
-    // Solo verificar una vez, no por cada hábito
-    const habitMasterUnlocked = user.achievements.includes('habit_master');
-    if (!habitMasterUnlocked) {
+    // Verificar hábito maestro
+    if (!user.achievements.includes('habit_master')) {
       for (const habit of habits) {
         const completions = habit.completions.filter(c => c.completed).length;
         if (completions >= 30) {
-          user.achievements.push('habit_master');
-          user.points += ACHIEVEMENTS.HABIT_MASTER.points;
-          newAchievements.push(ACHIEVEMENTS.HABIT_MASTER);
-          break; // Solo desbloquear una vez
+          unlockAchievement('HABIT_MASTER');
+          break;
         }
       }
     }
 
-    // Verificar HABIT_EXPLORER (10 hábitos diferentes)
-    if (habits.length >= 10 && !user.achievements.includes('habit_explorer')) {
-      user.achievements.push('habit_explorer');
-      user.points += ACHIEVEMENTS.HABIT_EXPLORER.points;
-      newAchievements.push(ACHIEVEMENTS.HABIT_EXPLORER);
-    }
-
-    // Verificar CENTURY_CLUB (100 completados totales)
-    if (user.totalHabitsCompleted >= 100 && !user.achievements.includes('century_club')) {
-      user.achievements.push('century_club');
-      user.points += ACHIEVEMENTS.CENTURY_CLUB.points;
-      newAchievements.push(ACHIEVEMENTS.CENTURY_CLUB);
-    }
-
-    // Verificar PERFECT_DAY (todos los hábitos completados en un día)
+    // Verificar día perfecto
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    const todayHabits = habits.filter(habit => {
-      const dayOfWeek = today.getDay();
-      const dayMap = { 0: 'D', 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S' };
-      return habit.frequency.includes(dayMap[dayOfWeek]);
-    });
+    const dayMap = { 0: 'D', 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S' };
+    const todayHabits = habits.filter(habit => 
+      habit.frequency.includes(dayMap[today.getDay()])
+    );
 
     if (todayHabits.length > 0) {
       const allCompletedToday = todayHabits.every(habit => {
@@ -184,30 +160,25 @@ const checkAndUnlockAchievements = async (userId) => {
         });
       });
 
-      if (allCompletedToday && !user.achievements.includes('perfect_day')) {
-        user.achievements.push('perfect_day');
-        user.points += ACHIEVEMENTS.PERFECT_DAY.points;
-        newAchievements.push(ACHIEVEMENTS.PERFECT_DAY);
-      }
+      if (allCompletedToday) unlockAchievement('PERFECT_DAY');
     }
 
-    // Calcular nivel basado en puntos
+    // Actualizar nivel
     const newLevel = Math.floor(user.points / 100) + 1;
     if (newLevel > user.level) {
       user.level = newLevel;
     }
 
     await user.save();
-
     return newAchievements;
   } catch (error) {
     console.error('Error verificando logros:', error);
     return [];
   }
-};
+}
 
-// Obtener progreso hacia el siguiente nivel
-const getLevelProgress = async (req, res) => {
+// Obtener progreso de nivel
+async function getLevelProgress(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -233,7 +204,7 @@ const getLevelProgress = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener progreso', error: error.message });
   }
-};
+}
 
 module.exports = {
   getAchievements,

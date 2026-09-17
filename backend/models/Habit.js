@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Esquema de hábito más simple
 const habitSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -8,8 +9,7 @@ const habitSchema = new mongoose.Schema({
   },
   name: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   emoji: {
     type: String,
@@ -17,11 +17,10 @@ const habitSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Salud', 'Productividad', 'Aprendizaje', 'Bienestar', 'Otro'],
     default: 'Otro'
   },
   frequency: {
-    type: [String], // ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+    type: [String],
     default: ['L', 'M', 'X', 'J', 'V', 'S', 'D']
   },
   duration: {
@@ -31,7 +30,6 @@ const habitSchema = new mongoose.Schema({
     },
     unit: {
       type: String,
-      enum: ['min', 'seg', 'horas'],
       default: 'min'
     }
   },
@@ -43,7 +41,6 @@ const habitSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // Para rastrear completados por fecha
   completions: [{
     date: {
       type: Date,
@@ -59,7 +56,7 @@ const habitSchema = new mongoose.Schema({
   }]
 });
 
-// Índice para búsquedas eficientes
+// Índices para mejorar búsquedas
 habitSchema.index({ user: 1, active: 1 });
 habitSchema.index({ user: 1, 'completions.date': 1 });
 

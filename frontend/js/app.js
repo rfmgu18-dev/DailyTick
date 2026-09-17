@@ -1,22 +1,20 @@
-// DailyTick Frontend Application
+// DailyTick - Frontend simplificado
 
-// API Base URL
 const API_URL = '/api';
 
-// DOM Elements
+// Elementos del DOM
 const authSection = document.getElementById('authSection');
 const appSection = document.getElementById('appSection');
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
-const habitModal = document.getElementById('habitModal');
 
-// Initialize app
+// Inicializar aplicación
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     setupEventListeners();
 });
 
-// Check if user is authenticated
+// Verificar autenticación
 async function checkAuth() {
     try {
         const response = await fetch(`${API_URL}/auth/me`);
@@ -27,23 +25,21 @@ async function checkAuth() {
             showAuth();
         }
     } catch (error) {
-        console.error('Error checking auth:', error);
         showAuth();
     }
 }
 
-// Show authentication section
+// Mostrar sección de autenticación
 function showAuth() {
     authSection.classList.remove('hidden');
     appSection.classList.add('hidden');
 }
 
-// Show main application
+// Mostrar aplicación principal
 function showApp(user) {
     authSection.classList.add('hidden');
     appSection.classList.remove('hidden');
     
-    // Change URL to /app when authenticated
     if (window.location.pathname === '/' || window.location.pathname === '/auth') {
         window.history.pushState({}, '', '/app');
     }
@@ -52,9 +48,9 @@ function showApp(user) {
     updateUserInfo(user);
 }
 
-// Setup event listeners
+// Configurar eventos
 function setupEventListeners() {
-    // Auth forms
+    // Formularios de autenticación
     document.getElementById('loginFormElement').addEventListener('submit', handleLogin);
     document.getElementById('registerFormElement').addEventListener('submit', handleRegister);
     document.getElementById('showRegister').addEventListener('click', () => {
@@ -66,7 +62,7 @@ function setupEventListeners() {
         loginForm.classList.remove('hidden');
     });
 
-    // Navigation
+    // Navegación
     document.getElementById('navHome').addEventListener('click', () => showSection('home'));
     document.getElementById('navHabits').addEventListener('click', () => showSection('habits'));
     document.getElementById('navStats').addEventListener('click', () => showSection('stats'));
@@ -74,27 +70,27 @@ function setupEventListeners() {
     document.getElementById('navSettings').addEventListener('click', () => showSection('settings'));
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
 
-    // Habit buttons
-    document.getElementById('addHabitBtn').addEventListener('click', () => showHabitModal());
-    document.getElementById('addNewHabitBtn').addEventListener('click', () => showHabitModal());
+    // Botones de hábitos
+    document.getElementById('addHabitBtn').addEventListener('click', showHabitModal);
+    document.getElementById('addNewHabitBtn').addEventListener('click', showHabitModal);
     document.getElementById('cancelHabitBtn').addEventListener('click', hideHabitModal);
     document.getElementById('habitForm').addEventListener('submit', handleCreateHabit);
 
-    // Achievements modal
+    // Modal de logros
     document.getElementById('achievementsBtn').addEventListener('click', showAchievementsModal);
     document.getElementById('closeAchievementsBtn').addEventListener('click', hideAchievementsModal);
 
-    // Settings forms
+    // Configuración
     document.getElementById('profileForm').addEventListener('submit', handleUpdateProfile);
     document.getElementById('passwordForm').addEventListener('submit', handleChangePassword);
     document.getElementById('saveSettingsBtn').addEventListener('click', handleUpdateSettings);
     document.getElementById('deleteAccountBtn').addEventListener('click', handleDeleteAccount);
 
-    // Emoji picker
+    // Selector de emoji
     document.getElementById('emojiPickerBtn').addEventListener('click', showEmojiPicker);
     document.getElementById('closeEmojiPicker').addEventListener('click', hideEmojiPicker);
 
-    // Set default frequency checkboxes and handle UI
+    // Frecuencia de hábitos
     document.querySelectorAll('.freq-checkbox').forEach(cb => {
         cb.checked = true;
         cb.addEventListener('change', function() {
@@ -109,12 +105,11 @@ function setupEventListeners() {
                 parent.style.color = '';
             }
         });
-        // Trigger change to set initial state
         cb.dispatchEvent(new Event('change'));
     });
 }
 
-// Handle login
+// Manejar login
 async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
@@ -140,7 +135,7 @@ async function handleLogin(e) {
     }
 }
 
-// Handle registration
+// Manejar registro
 async function handleRegister(e) {
     e.preventDefault();
     const name = document.getElementById('registerName').value;
@@ -167,7 +162,7 @@ async function handleRegister(e) {
     }
 }
 
-// Handle logout
+// Manejar logout
 async function handleLogout() {
     try {
         await fetch(`${API_URL}/auth/logout`, { method: 'POST' });
@@ -178,43 +173,41 @@ async function handleLogout() {
     }
 }
 
-// Show section
+// Mostrar sección
 function showSection(section) {
-    // Hide all sections
-    document.getElementById('homeSection').classList.add('hidden');
-    document.getElementById('habitsSection').classList.add('hidden');
-    document.getElementById('statsSection').classList.add('hidden');
-    document.getElementById('calendarSection').classList.add('hidden');
-    document.getElementById('settingsSection').classList.add('hidden');
+    // Ocultar todas las secciones
+    ['home', 'habits', 'stats', 'calendar', 'settings'].forEach(s => {
+        document.getElementById(`${s}Section`).classList.add('hidden');
+    });
 
-    // Remove active class from all nav buttons
+    // Remover clase activa de todos los botones
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'font-medium');
         btn.classList.add('hover:bg-gray-100', 'text-gray-700');
     });
 
-    // Show selected section
+    // Mostrar sección seleccionada
     document.getElementById(`${section}Section`).classList.remove('hidden');
 
-    // Add active class to selected nav button
+    // Activar botón correspondiente
     const activeBtn = document.getElementById(`nav${section.charAt(0).toUpperCase() + section.slice(1)}`);
     if (activeBtn) {
         activeBtn.classList.add('active', 'bg-blue-50', 'text-blue-600', 'font-medium');
         activeBtn.classList.remove('hover:bg-gray-100', 'text-gray-700');
     }
 
-    // Load section-specific data
+    // Cargar datos específicos
     if (section === 'home') loadTodayHabits();
     if (section === 'habits') loadAllHabits();
     if (section === 'stats') loadStats();
     if (section === 'calendar') {
-        currentCalendarDate = new Date(); // Reset to current month
+        currentCalendarDate = new Date();
         loadCalendar();
     }
     if (section === 'settings') loadSettings();
 }
 
-// Load today's habits
+// Cargar hábitos de hoy
 async function loadTodayHabits() {
     try {
         const today = new Date().toISOString().split('T')[0];
@@ -227,11 +220,11 @@ async function loadTodayHabits() {
             updateCurrentDate();
         }
     } catch (error) {
-        console.error('Error loading habits:', error);
+        console.error('Error al cargar hábitos:', error);
     }
 }
 
-// Load all habits
+// Cargar todos los hábitos
 async function loadAllHabits() {
     try {
         const response = await fetch(`${API_URL}/habits`);
@@ -241,33 +234,39 @@ async function loadAllHabits() {
             renderAllHabits(data.habits);
         }
     } catch (error) {
-        console.error('Error loading all habits:', error);
+        console.error('Error al cargar hábitos:', error);
     }
 }
 
-// Render habits list
+// Renderizar hábitos
 function renderHabits(habits) {
     const container = document.getElementById('habitsList');
     container.innerHTML = '';
 
     if (habits.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-center py-8">No hay hábitos para hoy. ¡Agrega uno nuevo!</p>';
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">No hay hábitos para hoy. ¡Crea el primero!</p>';
         return;
     }
 
     habits.forEach(habit => {
         const card = document.createElement('div');
-        card.className = `habit-card bg-white p-4 rounded-lg shadow flex items-center justify-between ${habit.completedToday ? 'completed' : ''}`;
+        card.className = `habit-card p-4 rounded-lg border-2 ${habit.completedToday ? 'completed' : ''}`;
         card.innerHTML = `
-            <div class="flex items-center space-x-3">
-                <input type="checkbox" 
-                    class="habit-checkbox" 
-                    data-emoji="${habit.emoji}"
-                    ${habit.completedToday ? 'checked' : ''} 
-                    onchange="toggleHabit('${habit._id}', '${habit.completedToday}')">
-                <div>
-                    <p class="font-medium text-gray-800">${habit.name}</p>
-                    <p class="text-sm text-gray-500">${habit.duration.value} ${habit.duration.unit} • ${habit.category}</p>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <input type="checkbox" 
+                           class="habit-checkbox" 
+                           ${habit.completedToday ? 'checked' : ''} 
+                           onchange="toggleHabit('${habit._id}', '${new Date().toISOString().split('T')[0]}')"
+                           data-emoji="${habit.emoji}">
+                    <div>
+                        <h3 class="font-bold text-gray-800">${habit.name}</h3>
+                        <p class="text-sm text-gray-600">${habit.category} • ${habit.duration.value} ${habit.duration.unit}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="editHabit('${habit._id}')" class="text-blue-500 hover:text-blue-700">✏️</button>
+                    <button onclick="deleteHabit('${habit._id}')" class="text-red-500 hover:text-red-700">🗑️</button>
                 </div>
             </div>
         `;
@@ -275,34 +274,31 @@ function renderHabits(habits) {
     });
 }
 
-// Render all habits
+// Renderizar todos los hábitos
 function renderAllHabits(habits) {
     const container = document.getElementById('allHabitsList');
     container.innerHTML = '';
 
     if (habits.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-center py-8">No tienes hábitos creados aún.</p>';
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">No tienes hábitos. ¡Crea el primero!</p>';
         return;
     }
 
     habits.forEach(habit => {
         const card = document.createElement('div');
-        card.className = 'habit-card bg-white p-4 rounded-lg shadow';
+        card.className = 'habit-card p-4 rounded-lg border-2';
         card.innerHTML = `
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-4">
                     <span class="text-2xl">${habit.emoji}</span>
                     <div>
-                        <p class="font-medium text-gray-800">${habit.name}</p>
-                        <p class="text-sm text-gray-500">${habit.category} • ${habit.frequency.join(', ')}</p>
+                        <h3 class="font-bold text-gray-800">${habit.name}</h3>
+                        <p class="text-sm text-gray-600">${habit.category} • ${habit.frequency.join(', ')}</p>
                     </div>
                 </div>
-                <div class="relative">
-                    <button onclick="toggleHabitMenu('${habit._id}')" class="text-gray-500 hover:text-gray-700 text-xl">⋮</button>
-                    <div id="habitMenu-${habit._id}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
-                        <button onclick="editHabit('${habit._id}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-t-lg">✏️ Modificar Hábito</button>
-                        <button onclick="deleteHabit('${habit._id}')" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 rounded-b-lg">🗑️ Eliminar Hábito</button>
-                    </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="editHabit('${habit._id}')" class="text-blue-500 hover:text-blue-700">✏️</button>
+                    <button onclick="deleteHabit('${habit._id}')" class="text-red-500 hover:text-red-700">🗑️</button>
                 </div>
             </div>
         `;
@@ -310,83 +306,82 @@ function renderAllHabits(habits) {
     });
 }
 
-// Toggle habit menu
-function toggleHabitMenu(habitId) {
-    const menu = document.getElementById(`habitMenu-${habitId}`);
-    const allMenus = document.querySelectorAll('[id^="habitMenu-"]');
-    
-    // Close all other menus
-    allMenus.forEach(m => {
-        if (m.id !== `habitMenu-${habitId}`) {
-            m.classList.add('hidden');
-        }
-    });
-    
-    // Toggle current menu
-    menu.classList.toggle('hidden');
-}
-
-// Edit habit (opens the habit modal with existing data)
-function editHabit(habitId) {
-    // Find the habit data
-    fetch(`${API_URL}/habits`)
-        .then(response => response.json())
-        .then(data => {
-            const habit = data.habits.find(h => h._id === habitId);
-            if (habit) {
-                // Populate the form with existing data
-                document.getElementById('habitName').value = habit.name;
-                document.getElementById('habitEmoji').value = habit.emoji;
-                document.getElementById('habitCategory').value = habit.category;
-                document.getElementById('habitDuration').value = habit.duration.value;
-                document.getElementById('habitDurationUnit').value = habit.duration.unit;
-                
-                // Set frequency checkboxes
-                document.querySelectorAll('.freq-checkbox').forEach(cb => {
-                    cb.checked = habit.frequency.includes(cb.value);
-                    cb.dispatchEvent(new Event('change'));
-                });
-                
-                // Store the habit ID for updating
-                document.getElementById('habitForm').dataset.editingHabitId = habitId;
-                
-                // Change the form behavior to update instead of create
-                const submitBtn = document.querySelector('#habitForm button[type="submit"]');
-                submitBtn.textContent = 'Actualizar Hábito';
-                
-                showHabitModal();
-            }
-        });
-}
-
-// Toggle habit completion
-async function toggleHabit(habitId, currentStatus) {
+// Marcar hábito como completado
+async function toggleHabit(habitId, date) {
     try {
-        const today = new Date().toISOString().split('T')[0];
         const response = await fetch(`${API_URL}/habits/${habitId}/toggle`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date: today })
+            body: JSON.stringify({ date })
         });
 
+        const data = await response.json();
+
         if (response.ok) {
-            const data = await response.json();
-            
-            // Show achievement notifications if any
-            if (data.newAchievements && data.newAchievements.length > 0) {
-                data.newAchievements.forEach(achievement => {
-                    showAchievementNotification(achievement);
-                });
+            if (data.newAchievements) {
+                showAlert(`¡Logro desbloqueado: ${data.newAchievements[0].name}!`, 'success');
             }
-            
             loadTodayHabits();
+        } else {
+            showAlert(data.message || 'Error al actualizar hábito', 'error');
         }
     } catch (error) {
-        console.error('Error toggling habit:', error);
+        showAlert('Error de conexión', 'error');
     }
 }
 
-// Delete habit
+// Mostrar modal de hábito
+function showHabitModal() {
+    document.getElementById('habitModal').classList.remove('hidden');
+    document.getElementById('habitModal').classList.add('flex');
+}
+
+// Ocultar modal de hábito
+function hideHabitModal() {
+    document.getElementById('habitModal').classList.add('hidden');
+    document.getElementById('habitModal').classList.remove('flex');
+    document.getElementById('habitForm').reset();
+}
+
+// Crear hábito
+async function handleCreateHabit(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('habitName').value;
+    const emoji = document.getElementById('habitEmoji').value || '✓';
+    const category = document.getElementById('habitCategory').value;
+    const duration = {
+        value: document.getElementById('habitDuration').value,
+        unit: document.getElementById('habitUnit').value
+    };
+
+    const frequency = [];
+    document.querySelectorAll('.freq-checkbox:checked').forEach(cb => {
+        frequency.push(cb.value);
+    });
+
+    try {
+        const response = await fetch(`${API_URL}/habits`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, emoji, category, duration, frequency })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showAlert('Hábito creado exitosamente', 'success');
+            hideHabitModal();
+            loadTodayHabits();
+        } else {
+            showAlert(data.message || 'Error al crear hábito', 'error');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+// Eliminar hábito
 async function deleteHabit(habitId) {
     if (!confirm('¿Estás seguro de eliminar este hábito?')) return;
 
@@ -397,258 +392,111 @@ async function deleteHabit(habitId) {
 
         if (response.ok) {
             showAlert('Hábito eliminado', 'success');
-            // Close the menu
-            const menu = document.getElementById(`habitMenu-${habitId}`);
-            if (menu) menu.classList.add('hidden');
-            loadAllHabits();
-        }
-    } catch (error) {
-        showAlert('Error al eliminar hábito', 'error');
-    }
-}
-
-// Show habit modal
-function showHabitModal() {
-    habitModal.classList.remove('hidden');
-    habitModal.classList.add('flex');
-}
-
-// Hide habit modal
-function hideHabitModal() {
-    habitModal.classList.add('hidden');
-    habitModal.classList.remove('flex');
-    document.getElementById('habitForm').reset();
-    
-    // Reset editing state
-    const form = document.getElementById('habitForm');
-    delete form.dataset.editingHabitId;
-    
-    // Reset button text
-    const submitBtn = document.querySelector('#habitForm button[type="submit"]');
-    submitBtn.textContent = 'Crear Hábito';
-    
-    // Reset frequency checkboxes
-    document.querySelectorAll('.freq-checkbox').forEach(cb => {
-        cb.checked = true;
-        cb.dispatchEvent(new Event('change'));
-    });
-}
-
-// Handle create habit
-async function handleCreateHabit(e) {
-    e.preventDefault();
-
-    const name = document.getElementById('habitName').value;
-    const emoji = document.getElementById('habitEmoji').value || '✓';
-    const category = document.getElementById('habitCategory').value;
-    const duration = {
-        value: parseInt(document.getElementById('habitDuration').value),
-        unit: document.getElementById('habitDurationUnit').value
-    };
-
-    const frequency = [];
-    document.querySelectorAll('.freq-checkbox:checked').forEach(cb => {
-        frequency.push(cb.value);
-    });
-
-    if (frequency.length === 0) {
-        showAlert('Selecciona al menos un día de la semana', 'error');
-        return;
-    }
-
-    const form = document.getElementById('habitForm');
-    const editingHabitId = form.dataset.editingHabitId;
-
-    try {
-        let response, data;
-
-        if (editingHabitId) {
-            // Update existing habit
-            response = await fetch(`${API_URL}/habits/${editingHabitId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, emoji, category, frequency, duration })
-            });
-            data = await response.json();
-
-            if (response.ok) {
-                showAlert('Hábito actualizado exitosamente', 'success');
-            } else {
-                showAlert(data.message || 'Error al actualizar hábito', 'error');
-            }
-        } else {
-            // Create new habit
-            response = await fetch(`${API_URL}/habits`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, emoji, category, frequency, duration })
-            });
-            data = await response.json();
-
-            if (response.ok) {
-                showAlert('Hábito creado exitosamente', 'success');
-            } else {
-                showAlert(data.message || 'Error al crear hábito', 'error');
-            }
-        }
-
-        if (response.ok) {
-            hideHabitModal();
             loadTodayHabits();
             loadAllHabits();
+        } else {
+            showAlert('Error al eliminar hábito', 'error');
         }
     } catch (error) {
         showAlert('Error de conexión', 'error');
     }
 }
 
-// Update progress counter
-function updateProgress(habits) {
-    const completed = habits.filter(h => h.completedToday).length;
-    const total = habits.length;
-    document.getElementById('progressCounter').textContent = `${completed}/${total} completados`;
-}
-
-// Update current date display
-function updateCurrentDate() {
-    const options = { weekday: 'long', day: 'numeric' };
-    const today = new Date().toLocaleDateString('es-ES', options);
-    document.getElementById('currentDate').textContent = `Hoy - ${today.charAt(0).toUpperCase() + today.slice(1)}`;
-}
-
-// Update user info
-function updateUserInfo(user) {
-    // Update user-related UI elements
-    console.log('User info updated:', user);
-}
-
-// Load statistics
+// Cargar estadísticas
 async function loadStats() {
     try {
         const response = await fetch(`${API_URL}/stats`);
         const data = await response.json();
 
         if (response.ok) {
-            // Update streak
-            document.getElementById('currentStreak').textContent = `${data.currentStreak} días 🔥`;
-            
-            // Update completion rate
-            document.getElementById('completionRate').textContent = `${data.completionRate}%`;
-            document.getElementById('completionBar').style.width = `${data.completionRate}%`;
-            
-            // Render weekly chart with real data
-            const weeklyData = data.weeklyData.map(day => day.completed);
-            renderWeeklyChart(weeklyData);
-            
-            // Show most consistent habit if exists
-            if (data.mostConsistentHabit) {
-                showMostConsistentHabit(data.mostConsistentHabit);
-            }
-            
-            // Load level progress
-            await loadLevelProgress();
+            updateStatsUI(data);
         }
     } catch (error) {
-        console.error('Error loading stats:', error);
-        showAlert('Error al cargar estadísticas', 'error');
+        console.error('Error al cargar estadísticas:', error);
     }
 }
 
-// Render weekly chart
-function renderWeeklyChart(data) {
+// Actualizar UI de estadísticas
+function updateStatsUI(stats) {
+    document.getElementById('currentStreak').textContent = stats.currentStreak;
+    document.getElementById('completionRate').textContent = stats.completionRate + '%';
+    document.getElementById('totalHabits').textContent = stats.totalHabits;
+    document.getElementById('totalCompleted').textContent = stats.totalCompleted;
+
+    // Renderizar gráfico semanal
+    renderWeeklyChart(stats.weeklyData);
+
+    // Mostrar hábito más consistente
+    if (stats.mostConsistentHabit) {
+        document.getElementById('mostConsistentHabit').innerHTML = `
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">${stats.mostConsistentHabit.emoji}</span>
+                <div>
+                    <p class="font-bold">${stats.mostConsistentHabit.name}</p>
+                    <p class="text-sm text-gray-600">${stats.mostConsistentHabit.rate}% consistencia</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Renderizar gráfico semanal
+function renderWeeklyChart(weeklyData) {
     const container = document.getElementById('weeklyChart');
     container.innerHTML = '';
-    
-    const days = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-    const maxValue = Math.max(...data, 1); // Avoid division by zero
 
-    days.forEach((day, index) => {
-        const height = (data[index] / maxValue) * 100;
+    weeklyData.forEach(day => {
         const bar = document.createElement('div');
-        bar.className = 'chart-bar flex flex-col items-center';
+        bar.className = 'flex flex-col items-center';
         bar.innerHTML = `
-            <div class="bg-blue-500 w-8 rounded-t" style="height: ${height}%"></div>
-            <span class="text-sm text-gray-600 mt-2">${day}</span>
+            <div class="chart-bar bg-green-500 rounded-t" style="height: ${day.completed}%"></div>
+            <span class="text-xs mt-1">${day.day}</span>
         `;
         container.appendChild(bar);
     });
 }
 
-// Show most consistent habit
-function showMostConsistentHabit(habit) {
-    const container = document.getElementById('weeklyChart').parentElement;
-    
-    // Eliminar cualquier instancia previa del hábito más consistente
-    const existingHabitInfo = container.querySelector('.most-consistent-habit');
-    if (existingHabitInfo) {
-        existingHabitInfo.remove();
-    }
-    
-    // Solo mostrar si existe un hábito consistente
-    if (!habit) return;
-    
-    const habitInfo = document.createElement('div');
-    habitInfo.className = 'most-consistent-habit mt-4 p-4 bg-green-50 rounded-lg';
-    habitInfo.innerHTML = `
-        <h4 class="font-semibold text-green-800">🏆 Hábito más consistente</h4>
-        <p class="text-green-700">${habit.emoji} ${habit.name} - ${habit.rate}% de cumplimiento</p>
-    `;
-    
-    container.appendChild(habitInfo);
+// Actualizar progreso
+function updateProgress(habits) {
+    const completed = habits.filter(h => h.completedToday).length;
+    const total = habits.length;
+    const progress = total > 0 ? (completed / total) * 100 : 0;
+
+    document.getElementById('progressBar').style.width = progress + '%';
+    document.getElementById('progressText').textContent = `${completed}/${total} completados`;
 }
 
-// Show alert
-function showAlert(message, type = 'info') {
-    const container = document.getElementById('alertContainer');
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.textContent = message;
-    container.appendChild(alert);
-
-    setTimeout(() => {
-        alert.remove();
-    }, 3000);
+// Actualizar fecha actual
+function updateCurrentDate() {
+    const today = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').textContent = today.toLocaleDateString('es-ES', options);
 }
 
-// Show achievement notification
-function showAchievementNotification(achievement) {
-    const container = document.getElementById('alertContainer');
-    const notification = document.createElement('div');
-    notification.className = 'alert alert-success bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0';
-    notification.innerHTML = `
-        <div class="flex items-center space-x-2">
-            <span class="text-2xl">${achievement.icon}</span>
-            <div>
-                <p class="font-bold">¡Logro desbloqueado!</p>
-                <p class="text-sm">${achievement.name} - +${achievement.points} puntos</p>
-            </div>
-        </div>
-    `;
-    container.appendChild(notification);
-
-    setTimeout(() => {
-        notification.remove();
-    }, 5000);
+// Actualizar información de usuario
+function updateUserInfo(user) {
+    document.getElementById('userName').textContent = user.name;
+    document.getElementById('userStreak').textContent = user.streak;
+    document.getElementById('userPoints').textContent = user.points;
+    document.getElementById('userLevel').textContent = user.level;
 }
 
-// Show achievements modal
+// Mostrar modal de logros
 async function showAchievementsModal() {
-    const modal = document.getElementById('achievementsModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    document.getElementById('achievementsModal').classList.remove('hidden');
+    document.getElementById('achievementsModal').classList.add('flex');
     
     await loadAchievements();
     await loadLevelProgress();
 }
 
-// Hide achievements modal
+// Ocultar modal de logros
 function hideAchievementsModal() {
-    const modal = document.getElementById('achievementsModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    document.getElementById('achievementsModal').classList.add('hidden');
+    document.getElementById('achievementsModal').classList.remove('flex');
 }
 
-// Load achievements
+// Cargar logros
 async function loadAchievements() {
     try {
         const response = await fetch(`${API_URL}/achievements`);
@@ -658,11 +506,11 @@ async function loadAchievements() {
             renderAchievements(data.achievements);
         }
     } catch (error) {
-        console.error('Error loading achievements:', error);
+        console.error('Error al cargar logros:', error);
     }
 }
 
-// Render achievements
+// Renderizar logros
 function renderAchievements(achievements) {
     const container = document.getElementById('achievementsList');
     container.innerHTML = '';
@@ -678,202 +526,50 @@ function renderAchievements(achievements) {
                     <p class="text-sm text-gray-600">${achievement.description}</p>
                     <p class="text-xs text-purple-600 font-medium">+${achievement.points} puntos</p>
                 </div>
-                <div class="text-right">
-                    ${achievement.unlocked 
-                        ? '<span class="text-green-600 font-bold">✓ Desbloqueado</span>' 
-                        : '<span class="text-gray-400">Pendiente</span>'}
-                </div>
+                ${achievement.unlocked ? '<span class="text-green-600 font-bold">✓</span>' : ''}
             </div>
         `;
         container.appendChild(card);
     });
 }
 
-// Load level progress
+// Cargar progreso de nivel
 async function loadLevelProgress() {
     try {
         const response = await fetch(`${API_URL}/achievements/level-progress`);
         const data = await response.json();
 
         if (response.ok) {
-            document.getElementById('currentLevel').textContent = data.currentLevel;
-            document.getElementById('currentPoints').textContent = data.currentPoints;
-            document.getElementById('levelProgressBar').style.width = `${data.progress}%`;
-            document.getElementById('levelProgressText').textContent = 
-                `${data.pointsInCurrentLevel}/100 puntos para el nivel ${data.nextLevel}`;
+            document.getElementById('levelProgress').style.width = data.progress + '%';
+            document.getElementById('levelText').textContent = `Nivel ${data.currentLevel} - ${data.pointsInCurrentLevel}/${data.pointsForNextLevel} puntos`;
         }
     } catch (error) {
-        console.error('Error loading level progress:', error);
+        console.error('Error al cargar progreso:', error);
     }
 }
 
-// Calendar functionality
-let currentCalendarDate = new Date();
-
-// Load calendar data
-async function loadCalendar() {
-    try {
-        const year = currentCalendarDate.getFullYear();
-        const month = currentCalendarDate.getMonth();
-        
-        const response = await fetch(`${API_URL}/stats/month/${year}/${month}`);
-        const data = await response.json();
-
-        if (response.ok) {
-            renderCalendar(data.monthlyData, year, month);
-            updateMonthYearDisplay(year, month);
-        }
-    } catch (error) {
-        console.error('Error loading calendar:', error);
-    }
-}
-
-// Render calendar
-function renderCalendar(monthlyData, year, month) {
-    const container = document.getElementById('calendarView');
-    container.innerHTML = '';
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDay = firstDay.getDay(); // 0 = Sunday
-    const totalDays = lastDay.getDate();
-
-    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const dayNames = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
-
-    // Calendar header
-    const header = document.createElement('div');
-    header.className = 'grid grid-cols-7 gap-2 mb-4';
-    dayNames.forEach(day => {
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'text-center font-semibold text-gray-600';
-        dayHeader.textContent = day;
-        header.appendChild(dayHeader);
-    });
-    container.appendChild(header);
-
-    // Calendar grid
-    const grid = document.createElement('div');
-    grid.className = 'grid grid-cols-7 gap-2';
-
-    // Empty cells for days before the first day of the month
-    for (let i = 0; i < startDay; i++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.className = 'p-2';
-        grid.appendChild(emptyCell);
-    }
-
-    // Days of the month
-    for (let day = 1; day <= totalDays; day++) {
-        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayData = monthlyData[dateKey] || { total: 0, completed: 0, rate: 0 };
-        
-        const dayCell = document.createElement('div');
-        dayCell.className = 'p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition';
-        
-        // Color based on completion rate
-        let bgColor = 'bg-gray-100';
-        if (dayData.total > 0) {
-            if (dayData.rate === 100) bgColor = 'bg-green-100';
-            else if (dayData.rate >= 50) bgColor = 'bg-yellow-100';
-            else if (dayData.rate > 0) bgColor = 'bg-orange-100';
-            else bgColor = 'bg-red-100';
-        }
-        
-        dayCell.classList.add(bgColor);
-        
-        const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
-        if (isToday) {
-            dayCell.classList.add('ring-2', 'ring-blue-500');
-        }
-
-        dayCell.innerHTML = `
-            <div class="text-center">
-                <span class="font-medium ${isToday ? 'text-blue-600' : 'text-gray-800'}">${day}</span>
-                ${dayData.total > 0 ? `<div class="text-xs text-gray-600">${dayData.completed}/${dayData.total}</div>` : ''}
-            </div>
-        `;
-        
-        dayCell.addEventListener('click', () => showDayDetails(dateKey, dayData));
-        grid.appendChild(dayCell);
-    }
-
-    container.appendChild(grid);
-}
-
-// Update month/year display
-function updateMonthYearDisplay(year, month) {
-    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    document.getElementById('currentMonthYear').textContent = `${monthNames[month]} ${year}`;
-}
-
-// Show day details
-function showDayDetails(dateKey, dayData) {
-    const detailsSection = document.getElementById('dayDetails');
-    const title = document.getElementById('selectedDateTitle');
-    const habitsList = document.getElementById('dayHabitsList');
-
-    const date = new Date(dateKey);
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    title.textContent = date.toLocaleDateString('es-ES', options);
-
-    habitsList.innerHTML = '';
-
-    if (dayData.habits && dayData.habits.length > 0) {
-        dayData.habits.forEach(habit => {
-            const habitItem = document.createElement('div');
-            habitItem.className = `flex items-center space-x-3 p-2 rounded ${habit.completed ? 'bg-green-50' : 'bg-gray-50'}`;
-            habitItem.innerHTML = `
-                <span class="text-2xl">${habit.emoji}</span>
-                <span class="flex-1">${habit.name}</span>
-                <span class="${habit.completed ? 'text-green-600' : 'text-gray-400'}">
-                    ${habit.completed ? '✓ Completado' : '○ Pendiente'}
-                </span>
-            `;
-            habitsList.appendChild(habitItem);
-        });
-    } else {
-        habitsList.innerHTML = '<p class="text-gray-500 text-center py-4">No hay hábitos programados para este día</p>';
-    }
-
-    detailsSection.classList.remove('hidden');
-}
-
-// Navigate months
-document.getElementById('prevMonthBtn').addEventListener('click', () => {
-    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-    loadCalendar();
-});
-
-document.getElementById('nextMonthBtn').addEventListener('click', () => {
-    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-    loadCalendar();
-});
-
-// Settings functionality
+// Cargar configuración
 async function loadSettings() {
     try {
         const response = await fetch(`${API_URL}/auth/me`);
         const data = await response.json();
 
         if (response.ok) {
-            document.getElementById('profileName').value = data.user.name;
-            document.getElementById('profileEmail').value = data.user.email;
-            document.getElementById('themeSelect').value = data.user.theme || 'light';
-            document.getElementById('notificationsToggle').checked = data.user.notificationsEnabled !== false;
+            document.getElementById('settingsName').value = data.user.name;
+            document.getElementById('settingsEmail').value = data.user.email;
+            document.getElementById('themeSelect').value = data.user.theme;
         }
     } catch (error) {
-        console.error('Error loading settings:', error);
+        console.error('Error al cargar configuración:', error);
     }
 }
 
+// Actualizar perfil
 async function handleUpdateProfile(e) {
     e.preventDefault();
     
-    const name = document.getElementById('profileName').value;
-    const email = document.getElementById('profileEmail').value;
+    const name = document.getElementById('settingsName').value;
+    const email = document.getElementById('settingsEmail').value;
 
     try {
         const response = await fetch(`${API_URL}/auth/profile`, {
@@ -885,7 +581,8 @@ async function handleUpdateProfile(e) {
         const data = await response.json();
 
         if (response.ok) {
-            showAlert('Perfil actualizado exitosamente', 'success');
+            showAlert('Perfil actualizado', 'success');
+            updateUserInfo(data.user);
         } else {
             showAlert(data.message || 'Error al actualizar perfil', 'error');
         }
@@ -894,6 +591,7 @@ async function handleUpdateProfile(e) {
     }
 }
 
+// Cambiar contraseña
 async function handleChangePassword(e) {
     e.preventDefault();
     
@@ -920,9 +618,10 @@ async function handleChangePassword(e) {
     }
 }
 
+// Actualizar configuración
 async function handleUpdateSettings() {
     const theme = document.getElementById('themeSelect').value;
-    const notificationsEnabled = document.getElementById('notificationsToggle').checked;
+    const notificationsEnabled = document.getElementById('notificationsEnabled').checked;
 
     try {
         const response = await fetch(`${API_URL}/auth/settings`, {
@@ -934,24 +633,29 @@ async function handleUpdateSettings() {
         const data = await response.json();
 
         if (response.ok) {
-            showAlert('Preferencias guardadas', 'success');
+            showAlert('Configuración actualizada', 'success');
             applyTheme(theme);
         } else {
-            showAlert(data.message || 'Error al guardar preferencias', 'error');
+            showAlert(data.message || 'Error al actualizar configuración', 'error');
         }
     } catch (error) {
         showAlert('Error de conexión', 'error');
     }
 }
 
-async function handleDeleteAccount() {
-    const password = prompt('Para eliminar tu cuenta, por favor ingresa tu contraseña:');
-    
-    if (!password) return;
-
-    if (!confirm('¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es irreversible.')) {
-        return;
+// Aplicar tema
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        document.body.classList.add('bg-gray-900');
+    } else {
+        document.body.classList.remove('bg-gray-900');
     }
+}
+
+// Eliminar cuenta
+async function handleDeleteAccount() {
+    const password = prompt('Ingresa tu contraseña para confirmar la eliminación de tu cuenta:');
+    if (!password) return;
 
     try {
         const response = await fetch(`${API_URL}/auth/account`, {
@@ -960,136 +664,104 @@ async function handleDeleteAccount() {
             body: JSON.stringify({ password })
         });
 
-        const data = await response.json();
-
         if (response.ok) {
-            showAlert('Cuenta eliminada exitosamente', 'success');
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
+            showAlert('Cuenta eliminada', 'success');
+            window.location.href = '/';
         } else {
-            showAlert(data.message || 'Error al eliminar cuenta', 'error');
+            showAlert('Error al eliminar cuenta', 'error');
         }
     } catch (error) {
         showAlert('Error de conexión', 'error');
     }
 }
 
-function applyTheme(theme) {
-    if (theme === 'dark') {
-        document.body.classList.add('bg-gray-900');
-        document.body.classList.remove('bg-gray-50');
-    } else {
-        document.body.classList.remove('bg-gray-900');
-        document.body.classList.add('bg-gray-50');
-    }
-}
-
-// Emoji picker functionality
-const commonEmojis = [
-    // Checkmarks & Success
-    '✓', '✅', '❌', '⭕', '🔘', '🔳', '🔲',
-    
-    // Stars & Awards
-    '⭐', '🌟', '💫', '✨', '🌙', '☀️', '🌞', '🔥', '💪', '🎯', '🏆', '🥇', '🥈', '🥉', '🎖️', '🏅',
-    
-    // Learning & Mind
-    '📚', '💡', '🧠', '🎓', '📖', '�', '✏️', '📐', '📏', '🎨', '�', '🎪', '🎬', '🎤', '🎧',
-    
-    // Health & Wellness
-    '🏃', '🚶', '🧘', '🧗', '🏊', '🚴', '⛹️', '�', '🤾', '🏋️', '🧖', '�🧘', '🍎', '🥗', '🥑', '🥦', '🥕',
-    '💧', '🥤', '🥛', '☕', '🍵', '🥣', '🍲', '🥘', '🍝', '🍜', '🍲', '🥗', '🍱', '🥪', '🌮', '�',
-    
-    // Nature & Weather
-    '�🌅', '�', '🌆', '🌇', '🌉', '�🌙', '☀️', '🌧️', '❄️', '⚡', '�', '�🌸', '🌺', '🌻', '🌹', '🌷', '�',
-    '🌲', '🌳', '�🍀', '🍁', '🍂', '🍃', '🌿', '☘️', '🍄', '🌵', '🌾', '🌾', '🌽', '🥕', '🥔', '🍠',
-    
-    // Activities & Hobbies
-    '🎮', '🎯', '🎲', '🎳', '🏈', '�', '⚽', '🎾', '🏸', '🏒', '🥎', '🎱', '🏓', '🏸', '🏑', '🏏',
-    '🥊', '🥋', '🥅', '⛳', '⛸️', '�', '🤿', '�', '🛷', '�', '�', '�', '🧗', '🧗', '🧗',
-    
-    // Time & Organization
-    '⏰', '⏱️', '⏲️', '🕰', '🕛', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '�', '🕗', '�', '�', '🕚',
-    '�', '📆', '🗓️', '�', '�️', '📁', '�', '�️', '🗄️', '💾', '💿', '📀', '�️', '�️',
-    
-    // Technology
-    '💻', '🖥️', '�️', '⌨️', '�️', '�️', '�', '💾', '💿', '📀', '📱', '📲', '☎️', '�', '�', '�',
-    '📺', '📻', '🎙️', '🎚️', '🎛️', '🧭', '⏱️', '⏲️', '⏰', '�', '⌚', '�', '🧭',
-    
-    // Home & Daily Life
-    '🏠', '🏡', '🏢', '🏣', '🏤', '🏥', '🏦', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭', '🏯', '🏰', '💒',
-    '🗼', '🗽', '⛪', '🕌', '🛕', '🕍', '⛩️', '🕋', '⛲', '⛺', '🏰', '🏯', '🏟️', '🎪', '🎡',
-    
-    // Travel & Places
-    '🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '🚲', '🚢', '🚁',
-    '✈️', '🚀', '🛸', '🛶', '⛵', '🚤', '🛥', '🛳️', '⛴️', '🚢', '🗺️', '🗿', '🗽', '🗼', '�',
-    
-    // Animals
-    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔',
-    '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋',
-    
-    // Food & Drink
-    '🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅',
-    '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯',
-    
-    // Faces & People
-    '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩',
-    '😘', '😗', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐',
-    
-    // Symbols
-    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
-    '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎',
-    
-    // More activities
-    '🎁', '🎈', '🎉', '🎊', '🎎', '🎒', '🎓', '🎖️', '🏅', '🎬', '🎤', '🎧', '🎼', '🎹', '🥁', '🎷',
-    '🎺', '🎸', '🪕', '🎻', '🪘', '🎙️', '🎚️', '🎛️', '🎤', '🎧', '📻', '🎷', '🎸', '🎹', '🎺', '🎻',
-    
-    // Fitness & Sports
-    '🤸', '🤼', '🤽', '🤾', '🤹', '🥎', '🤺', '🥏', '🪃', '🥅', '🥊', '🥋', '🥌', '🛹', '🛼', '🛷',
-    '⛸️', '🥌', '🎯', '🪀', '🎳', '🎮', '🕹️', '🎰', '🎲', '🧩', '🧸', '♠️', '♥️', '♦️', '♣️', '♟️',
-    
-    // Office & Work
-    '📅', '📆', '🗓️', '📇', '🗃️', '🗄️', '🗑️', '📒', '📓', '📔', '📕', '📖', '📗', '📘', '📙', '📚',
-    '📓', '📒', '📃', '📜', '📄', '📰', '🗞️', '📑', '🔖', '🏷️', '💰', '💴', '💵', '💶', '💷', '💸',
-    
-    // Nature Extended
-    '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌿', '☘️', '🍀', '🍁', '🍂', '🍃', '🍄', '🌰', '🥜', '🌰',
-    '🐀', '🐁', '🐂', '🐃', '🐄', '🐅', '🐆', '🐇', '🐈', '🐉', '🐊', '🐋', '🐌', '🐍', '🐎', '🐏',
-    
-    // Tools & Objects
-    '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🪓', '🪚', '🔩', '⚙️', '🪤', '🧰', '🪛', '🔫', '💣', '🧨', '🪓',
-    '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '🪦', '⚱️', '�', '🗿', '🗽', '🗼', '🗽', '�️', '�️',
-    
-    // Music & Arts
-    '�', '�', '�️', '�️', '🎛️', '🎤', '🎧', '📻', '🎷', '🎸', '🎹', '🎺', '🎻', '🪕', '🥁', '🪘',
-    '🎬', '🎨', '�', '🖼️', '�', '�️', '�️', '�', '📺', '📷', '📸', '📹', '📼', '🔍', '🔎'
-];
-
+// Mostrar selector de emoji
 function showEmojiPicker() {
-    const modal = document.getElementById('emojiPickerModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    const grid = document.getElementById('emojiGrid');
-    grid.innerHTML = '';
-    
-    commonEmojis.forEach(emoji => {
-        const emojiBtn = document.createElement('button');
-        emojiBtn.type = 'button';
-        emojiBtn.className = 'text-2xl p-2 hover:bg-gray-100 rounded transition';
-        emojiBtn.textContent = emoji;
-        emojiBtn.addEventListener('click', () => selectEmoji(emoji));
-        grid.appendChild(emojiBtn);
-    });
+    document.getElementById('emojiPickerModal').classList.remove('hidden');
+    document.getElementById('emojiPickerModal').classList.add('flex');
 }
 
+// Ocultar selector de emoji
 function hideEmojiPicker() {
-    const modal = document.getElementById('emojiPickerModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    document.getElementById('emojiPickerModal').classList.add('hidden');
+    document.getElementById('emojiPickerModal').classList.remove('flex');
 }
 
+// Seleccionar emoji
 function selectEmoji(emoji) {
     document.getElementById('habitEmoji').value = emoji;
     hideEmojiPicker();
+}
+
+// Variables para calendario
+let currentCalendarDate = new Date();
+
+// Cargar calendario
+async function loadCalendar() {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+
+    try {
+        const response = await fetch(`${API_URL}/stats/month/${year}/${month}`);
+        const data = await response.json();
+
+        if (response.ok) {
+            renderCalendar(data.monthlyData, data.startDate, data.endDate);
+        }
+    } catch (error) {
+        console.error('Error al cargar calendario:', error);
+    }
+}
+
+// Renderizar calendario
+function renderCalendar(monthlyData, startDate, endDate) {
+    const container = document.getElementById('calendarGrid');
+    container.innerHTML = '';
+
+    // Actualizar título del mes
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    document.getElementById('calendarMonth').textContent = `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
+
+    // Renderizar días
+    for (let day = 1; day <= endDate.getDate(); day++) {
+        const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), day);
+        const dateKey = currentDate.toISOString().split('T')[0];
+        const dayData = monthlyData[dateKey] || { completed: 0, total: 0, rate: 0 };
+
+        const dayCell = document.createElement('div');
+        let bgColor = 'bg-gray-100';
+        
+        if (dayData.total > 0) {
+            if (dayData.rate === 100) bgColor = 'bg-green-500';
+            else if (dayData.rate >= 75) bgColor = 'bg-green-400';
+            else if (dayData.rate >= 50) bgColor = 'bg-green-300';
+            else if (dayData.rate >= 25) bgColor = 'bg-green-200';
+            else bgColor = 'bg-green-100';
+        }
+
+        dayCell.className = `calendar-day ${bgColor} p-2 rounded text-center cursor-pointer hover:opacity-80`;
+        dayCell.textContent = day;
+        dayCell.title = `${dayData.completed}/${dayData.total} completados (${dayData.rate}%)`;
+        
+        container.appendChild(dayCell);
+    }
+}
+
+// Navegar calendario
+function navigateCalendar(direction) {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+    loadCalendar();
+}
+
+// Mostrar alerta
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50`;
+    alertDiv.textContent = message;
+    document.body.appendChild(alertDiv);
+
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
 }

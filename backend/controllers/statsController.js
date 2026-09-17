@@ -1,8 +1,8 @@
 const Habit = require('../models/Habit');
 const User = require('../models/User');
 
-// Obtener estadísticas completas del usuario
-const getUserStats = async (req, res) => {
+// Obtener estadísticas del usuario
+async function getUserStats(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
@@ -15,20 +15,12 @@ const getUserStats = async (req, res) => {
 
     const habits = await Habit.find({ user: req.session.userId, active: true });
 
-    // Calcular racha actual
-    const currentStreak = await calculateCurrentStreak(req.session.userId, habits);
-
-    // Calcular tasa de cumplimiento general
-    const completionRate = await calculateCompletionRate(req.session.userId, habits);
-
-    // Obtener datos de la semana actual
-    const weeklyData = await getWeeklyData(req.session.userId, habits);
-
-    // Encontrar hábito más consistente
-    const mostConsistentHabit = await findMostConsistentHabit(habits);
-
-    // Total de hábitos completados en el último mes
-    const monthlyCompletions = await getMonthlyCompletions(req.session.userId, habits);
+    // Calcular estadísticas
+    const currentStreak = await calculateCurrentStreak(habits);
+    const completionRate = await calculateCompletionRate(habits);
+    const weeklyData = await getWeeklyData(habits);
+    const mostConsistentHabit = findMostConsistentHabit(habits);
+    const monthlyCompletions = getMonthlyCompletions(habits);
 
     res.json({
       currentStreak,
@@ -43,10 +35,10 @@ const getUserStats = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener estadísticas', error: error.message });
   }
-};
+}
 
-// Calcular racha actual (días consecutivos con al menos un hábito completado)
-const calculateCurrentStreak = async (userId, habits) => {
+// Calcular racha actual
+async function calculateCurrentStreak(habits) {
   if (habits.length === 0) return 0;
 
   const today = new Date();
@@ -55,7 +47,7 @@ const calculateCurrentStreak = async (userId, habits) => {
   let streak = 0;
   let currentDate = new Date(today);
   
-  // Verificar si hay algún hábito completado hoy
+  // Verificar si hay hábitos completados hoy
   const todayCompleted = habits.some(habit => {
     return habit.completions.some(comp => {
       const compDate = new Date(comp.date);
@@ -65,11 +57,10 @@ const calculateCurrentStreak = async (userId, habits) => {
   });
 
   if (!todayCompleted) {
-    // Si no hay nada completado hoy, verificar ayer para empezar la racha
     currentDate.setDate(currentDate.getDate() - 1);
   }
 
-  // Contar días consecutivos hacia atrás
+  // Contar días consecutivos
   while (true) {
     const dateCompleted = habits.some(habit => {
       return habit.completions.some(comp => {
@@ -88,10 +79,10 @@ const calculateCurrentStreak = async (userId, habits) => {
   }
 
   return streak;
-};
+}
 
-// Calcular tasa de cumplimiento general (últimos 30 días)
-const calculateCompletionRate = async (userId, habits) => {
+// Calcular tasa de cumplimiento
+async function calculateCompletionRate(habits) {
   if (habits.length === 0) return 0;
 
   const thirtyDaysAgo = new Date();
@@ -114,12 +105,12 @@ const calculateCompletionRate = async (userId, habits) => {
   });
 
   return totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0;
-};
+}
 
-// Obtener datos de la semana actual (completados por día)
-const getWeeklyData = async (userId, habits) => {
+// Obtener datos de la semana
+async function getWeeklyData(habits) {
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0 = Domingo, 6 = Sábado
+  const dayOfWeek = today.getDay();
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - dayOfWeek);
   startOfWeek.setHours(0, 0, 0, 0);
@@ -135,8 +126,7 @@ const getWeeklyData = async (userId, habits) => {
     let dayTotal = 0;
 
     habits.forEach(habit => {
-      const habitForDay = habit.frequency.includes(dayNames[i]);
-      if (habitForDay) {
+      if (habit.frequency.includes(dayNames[i])) {
         dayTotal++;
         const completed = habit.completions.some(comp => {
           const compDate = new Date(comp.date);
@@ -155,10 +145,10 @@ const getWeeklyData = async (userId, habits) => {
   }
 
   return weeklyData;
-};
+}
 
-// Encontrar el hábito más consistente
-const findMostConsistentHabit = async (habits) => {
+// Encontrar hábito más consistente
+function findMostConsistentHabit(habits) {
   if (habits.length === 0) return null;
 
   let mostConsistent = null;
@@ -182,10 +172,10 @@ const findMostConsistentHabit = async (habits) => {
   });
 
   return mostConsistent;
-};
+}
 
-// Obtener completados del último mes
-const getMonthlyCompletions = async (userId, habits) => {
+// Obtener completados del mes
+function getMonthlyCompletions(habits) {
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
   oneMonthAgo.setHours(0, 0, 0, 0);
@@ -202,16 +192,16 @@ const getMonthlyCompletions = async (userId, habits) => {
   });
 
   return monthlyTotal;
-};
+}
 
-// Obtener datos para un mes específico (para calendario)
-const getMonthlyData = async (req, res) => {
+// Obtener datos de un mes específico
+async function getMonthlyData(req, res) {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
     }
 
-    const { year, month } = req.params; // month: 0-11
+    const { year, month } = req.params;
     
     const startDate = new Date(year, month, 1);
     const endDate = new Date(year, month + 1, 0);
@@ -220,7 +210,7 @@ const getMonthlyData = async (req, res) => {
     
     const monthlyData = {};
     
-    // Inicializar todos los días del mes
+    // Inicializar días del mes
     for (let day = 1; day <= endDate.getDate(); day++) {
       const currentDate = new Date(year, month, day);
       const dateKey = currentDate.toISOString().split('T')[0];
@@ -263,7 +253,7 @@ const getMonthlyData = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener datos mensuales', error: error.message });
   }
-};
+}
 
 module.exports = {
   getUserStats,

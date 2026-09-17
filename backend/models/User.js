@@ -1,29 +1,26 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// Esquema de usuario más simple
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   email: {
     type: String,
     required: true,
-    unique: true,
-    lowercase: true,
-    trim: true
+    unique: true
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6
+    required: true
   },
   createdAt: {
     type: Date,
     default: Date.now
   },
-  // Para gamificación y logros
+  // Información de gamificación
   streak: {
     type: Number,
     default: 0
@@ -35,7 +32,6 @@ const userSchema = new mongoose.Schema({
   achievements: [{
     type: String
   }],
-  // Sistema de puntos y niveles
   points: {
     type: Number,
     default: 0
@@ -44,12 +40,9 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
-
-  // Configuración de usuario
   theme: {
     type: String,
-    enum: ['light', 'dark'],
-    default: 'light'
+    default: 'dark'
   },
   notificationsEnabled: {
     type: Boolean,
@@ -57,19 +50,19 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Encriptar password antes de guardar
+// Encriptar contraseña antes de guardar
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// Método para comparar passwords
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+// Método para verificar contraseña
+userSchema.methods.comparePassword = async function(password) {
+  return await bcrypt.compare(password, this.password);
 };
 
-// Método para actualizar racha del usuario
+// Método para calcular racha
 userSchema.methods.updateStreak = async function() {
   const Habit = require('./Habit');
   const habits = await Habit.find({ user: this._id, active: true });
@@ -86,7 +79,7 @@ userSchema.methods.updateStreak = async function() {
   let streak = 0;
   let currentDate = new Date(today);
   
-  // Verificar si hay algún hábito completado hoy
+  // Verificar si hay hábitos completados hoy
   const todayCompleted = habits.some(habit => {
     return habit.completions.some(comp => {
       const compDate = new Date(comp.date);
@@ -96,11 +89,10 @@ userSchema.methods.updateStreak = async function() {
   });
 
   if (!todayCompleted) {
-    // Si no hay nada completado hoy, verificar ayer para empezar la racha
     currentDate.setDate(currentDate.getDate() - 1);
   }
 
-  // Contar días consecutivos hacia atrás
+  // Contar días consecutivos
   while (true) {
     const dateCompleted = habits.some(habit => {
       return habit.completions.some(comp => {

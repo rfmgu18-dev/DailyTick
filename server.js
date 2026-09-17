@@ -1,47 +1,49 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const cors = require('cors');
-const session = require('express-session');
 const connectDB = require('./backend/config/database');
 
 const app = express();
 
-// Database connection
+// Conectar a la base de datos
 connectDB();
 
-// Middleware
-app.use(cors());
+// Configuración básica
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// Session configuration
-app.use(session({
+// Configuración de sesiones
+app.use(require('express-session')({
   secret: process.env.SESSION_SECRET || 'dailytick-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: {
-    secure: false, // Set to true in production with HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+  cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// Routes
+// Rutas de páginas
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'landing.html'));
+});
+
+app.get('/auth', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// API Routes
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+});
+
+// Rutas de la API
 app.use('/api/auth', require('./backend/routes/auth'));
 app.use('/api/habits', require('./backend/routes/habits'));
 app.use('/api/stats', require('./backend/routes/stats'));
 app.use('/api/achievements', require('./backend/routes/achievements'));
 
+// Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
 
 module.exports = app;
