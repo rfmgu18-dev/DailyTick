@@ -1,7 +1,6 @@
 const Habit = require('../models/Habit');
 const User = require('../models/User');
 
-// Obtener estadísticas del usuario
 async function getUserStats(req, res) {
   try {
     if (!req.session.userId) {
@@ -15,7 +14,6 @@ async function getUserStats(req, res) {
 
     const habits = await Habit.find({ user: req.session.userId, active: true });
 
-    // Calcular estadísticas
     const currentStreak = await calculateCurrentStreak(habits);
     const completionRate = await calculateCompletionRate(habits);
     const weeklyData = await getWeeklyData(habits);
@@ -37,7 +35,6 @@ async function getUserStats(req, res) {
   }
 }
 
-// Calcular racha actual
 async function calculateCurrentStreak(habits) {
   if (habits.length === 0) return 0;
 
@@ -47,7 +44,6 @@ async function calculateCurrentStreak(habits) {
   let streak = 0;
   let currentDate = new Date(today);
   
-  // Verificar si hay hábitos completados hoy
   const todayCompleted = habits.some(habit => {
     return habit.completions.some(comp => {
       const compDate = new Date(comp.date);
@@ -60,7 +56,6 @@ async function calculateCurrentStreak(habits) {
     currentDate.setDate(currentDate.getDate() - 1);
   }
 
-  // Contar días consecutivos
   while (true) {
     const dateCompleted = habits.some(habit => {
       return habit.completions.some(comp => {
@@ -81,7 +76,6 @@ async function calculateCurrentStreak(habits) {
   return streak;
 }
 
-// Calcular tasa de cumplimiento
 async function calculateCompletionRate(habits) {
   if (habits.length === 0) return 0;
 
@@ -107,7 +101,6 @@ async function calculateCompletionRate(habits) {
   return totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0;
 }
 
-// Obtener datos de la semana
 async function getWeeklyData(habits) {
   const today = new Date();
   const dayOfWeek = today.getDay();
@@ -147,7 +140,6 @@ async function getWeeklyData(habits) {
   return weeklyData;
 }
 
-// Encontrar hábito más consistente
 function findMostConsistentHabit(habits) {
   if (habits.length === 0) return null;
 
@@ -174,7 +166,6 @@ function findMostConsistentHabit(habits) {
   return mostConsistent;
 }
 
-// Obtener completados del mes
 function getMonthlyCompletions(habits) {
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
@@ -194,7 +185,6 @@ function getMonthlyCompletions(habits) {
   return monthlyTotal;
 }
 
-// Obtener datos de un mes específico
 async function getMonthlyData(req, res) {
   try {
     if (!req.session.userId) {
@@ -210,7 +200,6 @@ async function getMonthlyData(req, res) {
     
     const monthlyData = {};
     
-    // Inicializar días del mes
     for (let day = 1; day <= endDate.getDate(); day++) {
       const currentDate = new Date(year, month, day);
       const dateKey = currentDate.toISOString().split('T')[0];
@@ -223,7 +212,6 @@ async function getMonthlyData(req, res) {
       };
     }
     
-    // Llenar datos reales
     habits.forEach(habit => {
       habit.completions.forEach(completion => {
         const compDate = new Date(completion.date);

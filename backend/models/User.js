@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-// Esquema de usuario más simple
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -20,7 +19,6 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // Información de gamificación
   streak: {
     type: Number,
     default: 0
@@ -50,19 +48,16 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Encriptar contraseña antes de guardar
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// Método para verificar contraseña
 userSchema.methods.comparePassword = async function(password) {
   return await bcrypt.compare(password, this.password);
 };
 
-// Método para calcular racha
 userSchema.methods.updateStreak = async function() {
   const Habit = require('./Habit');
   const habits = await Habit.find({ user: this._id, active: true });
@@ -79,7 +74,6 @@ userSchema.methods.updateStreak = async function() {
   let streak = 0;
   let currentDate = new Date(today);
   
-  // Verificar si hay hábitos completados hoy
   const todayCompleted = habits.some(habit => {
     return habit.completions.some(comp => {
       const compDate = new Date(comp.date);
@@ -92,7 +86,6 @@ userSchema.methods.updateStreak = async function() {
     currentDate.setDate(currentDate.getDate() - 1);
   }
 
-  // Contar días consecutivos
   while (true) {
     const dateCompleted = habits.some(habit => {
       return habit.completions.some(comp => {

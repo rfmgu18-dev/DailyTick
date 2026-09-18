@@ -2,7 +2,6 @@ const Habit = require('../models/Habit');
 const User = require('../models/User');
 const { checkAndUnlockAchievements } = require('./achievementController');
 
-// Obtener todos los hábitos del usuario
 async function getHabits(req, res) {
   try {
     if (!req.session.userId) {
@@ -20,7 +19,6 @@ async function getHabits(req, res) {
   }
 }
 
-// Crear nuevo hábito
 async function createHabit(req, res) {
   try {
     if (!req.session.userId) {
@@ -48,7 +46,6 @@ async function createHabit(req, res) {
   }
 }
 
-// Marcar hábito como completado
 async function toggleHabitCompletion(req, res) {
   try {
     if (!req.session.userId) {
@@ -70,13 +67,11 @@ async function toggleHabitCompletion(req, res) {
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
 
-    // Buscar si ya existe registro para esa fecha
     const existingCompletion = habit.completions.find(
       c => new Date(c.date).toDateString() === targetDate.toDateString()
     );
 
     if (existingCompletion) {
-      // Cambiar estado si existe
       const wasCompleted = existingCompletion.completed;
       existingCompletion.completed = !existingCompletion.completed;
       if (existingCompletion.completed) {
@@ -91,7 +86,6 @@ async function toggleHabitCompletion(req, res) {
         });
       }
     } else {
-      // Crear nuevo registro si no existe
       habit.completions.push({
         date: targetDate,
         completed: true,
@@ -104,7 +98,6 @@ async function toggleHabitCompletion(req, res) {
 
     await habit.save();
 
-    // Verificar logros
     const newAchievements = await checkAndUnlockAchievements(req.session.userId);
 
     res.json({ 
@@ -117,7 +110,6 @@ async function toggleHabitCompletion(req, res) {
   }
 }
 
-// Actualizar hábito
 async function updateHabit(req, res) {
   try {
     if (!req.session.userId) {
@@ -150,7 +142,6 @@ async function updateHabit(req, res) {
   }
 }
 
-// Eliminar hábito (soft delete)
 async function deleteHabit(req, res) {
   try {
     if (!req.session.userId) {
@@ -177,7 +168,6 @@ async function deleteHabit(req, res) {
   }
 }
 
-// Obtener hábitos de un día específico
 async function getHabitsByDate(req, res) {
   try {
     if (!req.session.userId) {
@@ -193,7 +183,6 @@ async function getHabitsByDate(req, res) {
       active: true
     });
 
-    // Filtrar por frecuencia y añadir estado de completado
     const dayOfWeek = targetDate.getDay();
     const dayMap = { 0: 'D', 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S' };
     const dayLetter = dayMap[dayOfWeek];

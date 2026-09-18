@@ -1,20 +1,15 @@
-// DailyTick - Frontend simplificado
-
 const API_URL = '/api';
 
-// Elementos del DOM
 const authSection = document.getElementById('authSection');
 const appSection = document.getElementById('appSection');
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 
-// Inicializar aplicación
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     setupEventListeners();
 });
 
-// Verificar autenticación
 async function checkAuth() {
     try {
         const response = await fetch(`${API_URL}/auth/me`);
@@ -29,13 +24,11 @@ async function checkAuth() {
     }
 }
 
-// Mostrar sección de autenticación
 function showAuth() {
     authSection.classList.remove('hidden');
     appSection.classList.add('hidden');
 }
 
-// Mostrar aplicación principal
 function showApp(user) {
     authSection.classList.add('hidden');
     appSection.classList.remove('hidden');
@@ -48,9 +41,7 @@ function showApp(user) {
     updateUserInfo(user);
 }
 
-// Configurar eventos
 function setupEventListeners() {
-    // Formularios de autenticación
     document.getElementById('loginFormElement').addEventListener('submit', handleLogin);
     document.getElementById('registerFormElement').addEventListener('submit', handleRegister);
     document.getElementById('showRegister').addEventListener('click', () => {
@@ -62,7 +53,6 @@ function setupEventListeners() {
         loginForm.classList.remove('hidden');
     });
 
-    // Navegación
     document.getElementById('navHome').addEventListener('click', () => showSection('home'));
     document.getElementById('navHabits').addEventListener('click', () => showSection('habits'));
     document.getElementById('navStats').addEventListener('click', () => showSection('stats'));
@@ -70,27 +60,22 @@ function setupEventListeners() {
     document.getElementById('navSettings').addEventListener('click', () => showSection('settings'));
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
 
-    // Botones de hábitos
     document.getElementById('addHabitBtn').addEventListener('click', showHabitModal);
     document.getElementById('addNewHabitBtn').addEventListener('click', showHabitModal);
     document.getElementById('cancelHabitBtn').addEventListener('click', hideHabitModal);
     document.getElementById('habitForm').addEventListener('submit', handleCreateHabit);
 
-    // Modal de logros
     document.getElementById('achievementsBtn').addEventListener('click', showAchievementsModal);
     document.getElementById('closeAchievementsBtn').addEventListener('click', hideAchievementsModal);
 
-    // Configuración
     document.getElementById('profileForm').addEventListener('submit', handleUpdateProfile);
     document.getElementById('passwordForm').addEventListener('submit', handleChangePassword);
     document.getElementById('saveSettingsBtn').addEventListener('click', handleUpdateSettings);
     document.getElementById('deleteAccountBtn').addEventListener('click', handleDeleteAccount);
 
-    // Selector de emoji
     document.getElementById('emojiPickerBtn').addEventListener('click', showEmojiPicker);
     document.getElementById('closeEmojiPicker').addEventListener('click', hideEmojiPicker);
 
-    // Frecuencia de hábitos
     document.querySelectorAll('.freq-checkbox').forEach(cb => {
         cb.checked = true;
         cb.addEventListener('change', function() {
@@ -109,7 +94,6 @@ function setupEventListeners() {
     });
 }
 
-// Manejar login
 async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
@@ -135,7 +119,6 @@ async function handleLogin(e) {
     }
 }
 
-// Manejar registro
 async function handleRegister(e) {
     e.preventDefault();
     const name = document.getElementById('registerName').value;
@@ -162,7 +145,6 @@ async function handleRegister(e) {
     }
 }
 
-// Manejar logout
 async function handleLogout() {
     try {
         await fetch(`${API_URL}/auth/logout`, { method: 'POST' });
@@ -173,30 +155,24 @@ async function handleLogout() {
     }
 }
 
-// Mostrar sección
 function showSection(section) {
-    // Ocultar todas las secciones
     ['home', 'habits', 'stats', 'calendar', 'settings'].forEach(s => {
         document.getElementById(`${s}Section`).classList.add('hidden');
     });
 
-    // Remover clase activa de todos los botones
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'font-medium');
         btn.classList.add('hover:bg-gray-100', 'text-gray-700');
     });
 
-    // Mostrar sección seleccionada
     document.getElementById(`${section}Section`).classList.remove('hidden');
 
-    // Activar botón correspondiente
     const activeBtn = document.getElementById(`nav${section.charAt(0).toUpperCase() + section.slice(1)}`);
     if (activeBtn) {
         activeBtn.classList.add('active', 'bg-blue-50', 'text-blue-600', 'font-medium');
         activeBtn.classList.remove('hover:bg-gray-100', 'text-gray-700');
     }
 
-    // Cargar datos específicos
     if (section === 'home') loadTodayHabits();
     if (section === 'habits') loadAllHabits();
     if (section === 'stats') loadStats();
@@ -207,7 +183,6 @@ function showSection(section) {
     if (section === 'settings') loadSettings();
 }
 
-// Cargar hábitos de hoy
 async function loadTodayHabits() {
     try {
         const today = new Date().toISOString().split('T')[0];
@@ -224,7 +199,6 @@ async function loadTodayHabits() {
     }
 }
 
-// Cargar todos los hábitos
 async function loadAllHabits() {
     try {
         const response = await fetch(`${API_URL}/habits`);
@@ -238,7 +212,6 @@ async function loadAllHabits() {
     }
 }
 
-// Renderizar hábitos
 function renderHabits(habits) {
     const container = document.getElementById('habitsList');
     container.innerHTML = '';
@@ -274,7 +247,6 @@ function renderHabits(habits) {
     });
 }
 
-// Renderizar todos los hábitos
 function renderAllHabits(habits) {
     const container = document.getElementById('allHabitsList');
     container.innerHTML = '';
@@ -306,7 +278,6 @@ function renderAllHabits(habits) {
     });
 }
 
-// Marcar hábito como completado
 async function toggleHabit(habitId, date) {
     try {
         const response = await fetch(`${API_URL}/habits/${habitId}/toggle`, {
@@ -330,20 +301,17 @@ async function toggleHabit(habitId, date) {
     }
 }
 
-// Mostrar modal de hábito
 function showHabitModal() {
     document.getElementById('habitModal').classList.remove('hidden');
     document.getElementById('habitModal').classList.add('flex');
 }
 
-// Ocultar modal de hábito
 function hideHabitModal() {
     document.getElementById('habitModal').classList.add('hidden');
     document.getElementById('habitModal').classList.remove('flex');
     document.getElementById('habitForm').reset();
 }
 
-// Crear hábito
 async function handleCreateHabit(e) {
     e.preventDefault();
     
@@ -381,7 +349,6 @@ async function handleCreateHabit(e) {
     }
 }
 
-// Eliminar hábito
 async function deleteHabit(habitId) {
     if (!confirm('¿Estás seguro de eliminar este hábito?')) return;
 
@@ -402,7 +369,6 @@ async function deleteHabit(habitId) {
     }
 }
 
-// Cargar estadísticas
 async function loadStats() {
     try {
         const response = await fetch(`${API_URL}/stats`);
@@ -416,17 +382,14 @@ async function loadStats() {
     }
 }
 
-// Actualizar UI de estadísticas
 function updateStatsUI(stats) {
     document.getElementById('currentStreak').textContent = stats.currentStreak;
     document.getElementById('completionRate').textContent = stats.completionRate + '%';
     document.getElementById('totalHabits').textContent = stats.totalHabits;
     document.getElementById('totalCompleted').textContent = stats.totalCompleted;
 
-    // Renderizar gráfico semanal
     renderWeeklyChart(stats.weeklyData);
 
-    // Mostrar hábito más consistente
     if (stats.mostConsistentHabit) {
         document.getElementById('mostConsistentHabit').innerHTML = `
             <div class="flex items-center space-x-2">
@@ -440,7 +403,6 @@ function updateStatsUI(stats) {
     }
 }
 
-// Renderizar gráfico semanal
 function renderWeeklyChart(weeklyData) {
     const container = document.getElementById('weeklyChart');
     container.innerHTML = '';
@@ -456,7 +418,6 @@ function renderWeeklyChart(weeklyData) {
     });
 }
 
-// Actualizar progreso
 function updateProgress(habits) {
     const completed = habits.filter(h => h.completedToday).length;
     const total = habits.length;
@@ -466,14 +427,12 @@ function updateProgress(habits) {
     document.getElementById('progressText').textContent = `${completed}/${total} completados`;
 }
 
-// Actualizar fecha actual
 function updateCurrentDate() {
     const today = new Date();
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = today.toLocaleDateString('es-ES', options);
 }
 
-// Actualizar información de usuario
 function updateUserInfo(user) {
     document.getElementById('userName').textContent = user.name;
     document.getElementById('userStreak').textContent = user.streak;
@@ -481,7 +440,6 @@ function updateUserInfo(user) {
     document.getElementById('userLevel').textContent = user.level;
 }
 
-// Mostrar modal de logros
 async function showAchievementsModal() {
     document.getElementById('achievementsModal').classList.remove('hidden');
     document.getElementById('achievementsModal').classList.add('flex');
@@ -490,13 +448,11 @@ async function showAchievementsModal() {
     await loadLevelProgress();
 }
 
-// Ocultar modal de logros
 function hideAchievementsModal() {
     document.getElementById('achievementsModal').classList.add('hidden');
     document.getElementById('achievementsModal').classList.remove('flex');
 }
 
-// Cargar logros
 async function loadAchievements() {
     try {
         const response = await fetch(`${API_URL}/achievements`);
@@ -510,7 +466,6 @@ async function loadAchievements() {
     }
 }
 
-// Renderizar logros
 function renderAchievements(achievements) {
     const container = document.getElementById('achievementsList');
     container.innerHTML = '';
@@ -533,7 +488,6 @@ function renderAchievements(achievements) {
     });
 }
 
-// Cargar progreso de nivel
 async function loadLevelProgress() {
     try {
         const response = await fetch(`${API_URL}/achievements/level-progress`);
@@ -548,7 +502,6 @@ async function loadLevelProgress() {
     }
 }
 
-// Cargar configuración
 async function loadSettings() {
     try {
         const response = await fetch(`${API_URL}/auth/me`);
@@ -564,7 +517,6 @@ async function loadSettings() {
     }
 }
 
-// Actualizar perfil
 async function handleUpdateProfile(e) {
     e.preventDefault();
     
@@ -591,7 +543,6 @@ async function handleUpdateProfile(e) {
     }
 }
 
-// Cambiar contraseña
 async function handleChangePassword(e) {
     e.preventDefault();
     
@@ -618,7 +569,6 @@ async function handleChangePassword(e) {
     }
 }
 
-// Actualizar configuración
 async function handleUpdateSettings() {
     const theme = document.getElementById('themeSelect').value;
     const notificationsEnabled = document.getElementById('notificationsEnabled').checked;
@@ -643,7 +593,6 @@ async function handleUpdateSettings() {
     }
 }
 
-// Aplicar tema
 function applyTheme(theme) {
     if (theme === 'dark') {
         document.body.classList.add('bg-gray-900');
@@ -652,7 +601,6 @@ function applyTheme(theme) {
     }
 }
 
-// Eliminar cuenta
 async function handleDeleteAccount() {
     const password = prompt('Ingresa tu contraseña para confirmar la eliminación de tu cuenta:');
     if (!password) return;
@@ -675,28 +623,23 @@ async function handleDeleteAccount() {
     }
 }
 
-// Mostrar selector de emoji
 function showEmojiPicker() {
     document.getElementById('emojiPickerModal').classList.remove('hidden');
     document.getElementById('emojiPickerModal').classList.add('flex');
 }
 
-// Ocultar selector de emoji
 function hideEmojiPicker() {
     document.getElementById('emojiPickerModal').classList.add('hidden');
     document.getElementById('emojiPickerModal').classList.remove('flex');
 }
 
-// Seleccionar emoji
 function selectEmoji(emoji) {
     document.getElementById('habitEmoji').value = emoji;
     hideEmojiPicker();
 }
 
-// Variables para calendario
 let currentCalendarDate = new Date();
 
-// Cargar calendario
 async function loadCalendar() {
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
@@ -713,17 +656,14 @@ async function loadCalendar() {
     }
 }
 
-// Renderizar calendario
 function renderCalendar(monthlyData, startDate, endDate) {
     const container = document.getElementById('calendarGrid');
     container.innerHTML = '';
 
-    // Actualizar título del mes
     const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     document.getElementById('calendarMonth').textContent = `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
 
-    // Renderizar días
     for (let day = 1; day <= endDate.getDate(); day++) {
         const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), day);
         const dateKey = currentDate.toISOString().split('T')[0];
@@ -748,13 +688,11 @@ function renderCalendar(monthlyData, startDate, endDate) {
     }
 }
 
-// Navegar calendario
 function navigateCalendar(direction) {
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
     loadCalendar();
 }
 
-// Mostrar alerta
 function showAlert(message, type) {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50`;

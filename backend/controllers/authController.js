@@ -2,19 +2,16 @@ const User = require('../models/User');
 const Habit = require('../models/Habit');
 const jwt = require('jsonwebtoken');
 
-// Generar token JWT
 function generateToken(id) {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'dailytick-jwt-secret', {
     expiresIn: '30d'
   });
 }
 
-// Registrar nuevo usuario
 async function register(req, res) {
   try {
     const { name, email, password } = req.body;
 
-    // Validar campos
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
@@ -23,16 +20,13 @@ async function register(req, res) {
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
     }
 
-    // Verificar si usuario ya existe
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'El email ya está registrado' });
     }
 
-    // Crear usuario
     const user = await User.create({ name, email, password });
 
-    // Crear hábitos predeterminados
     await Habit.create([
       {
         user: user._id,
@@ -56,7 +50,6 @@ async function register(req, res) {
       }
     ]);
 
-    // Guardar en sesión
     req.session.userId = user._id;
 
     res.status(201).json({
@@ -73,7 +66,6 @@ async function register(req, res) {
   }
 }
 
-// Iniciar sesión
 async function login(req, res) {
   try {
     const { email, password } = req.body;
@@ -111,7 +103,6 @@ async function login(req, res) {
   }
 }
 
-// Cerrar sesión
 function logout(req, res) {
   req.session.destroy((err) => {
     if (err) {
@@ -121,7 +112,6 @@ function logout(req, res) {
   });
 }
 
-// Obtener usuario actual
 async function getCurrentUser(req, res) {
   try {
     if (!req.session.userId) {
@@ -139,7 +129,6 @@ async function getCurrentUser(req, res) {
   }
 }
 
-// Actualizar perfil
 async function updateProfile(req, res) {
   try {
     if (!req.session.userId) {
@@ -173,7 +162,6 @@ async function updateProfile(req, res) {
   }
 }
 
-// Cambiar contraseña
 async function changePassword(req, res) {
   try {
     if (!req.session.userId) {
@@ -209,7 +197,6 @@ async function changePassword(req, res) {
   }
 }
 
-// Actualizar configuración
 async function updateSettings(req, res) {
   try {
     if (!req.session.userId) {
@@ -237,7 +224,6 @@ async function updateSettings(req, res) {
   }
 }
 
-// Eliminar cuenta
 async function deleteAccount(req, res) {
   try {
     if (!req.session.userId) {

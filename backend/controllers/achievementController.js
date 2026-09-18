@@ -1,7 +1,6 @@
 const User = require('../models/User');
 const Habit = require('../models/Habit');
 
-// Logros disponibles del sistema
 const ACHIEVEMENTS = {
   FIRST_HABIT: {
     id: 'first_habit',
@@ -75,7 +74,6 @@ const ACHIEVEMENTS = {
   }
 };
 
-// Obtener logros del usuario
 async function getAchievements(req, res) {
   try {
     if (!req.session.userId) {
@@ -105,7 +103,6 @@ async function getAchievements(req, res) {
   }
 }
 
-// Verificar y desbloquear logros
 async function checkAndUnlockAchievements(userId) {
   try {
     const user = await User.findById(userId);
@@ -115,7 +112,6 @@ async function checkAndUnlockAchievements(userId) {
 
     const newAchievements = [];
 
-    // Función auxiliar para desbloquear logro
     function unlockAchievement(achievementKey) {
       const achievement = ACHIEVEMENTS[achievementKey];
       if (!user.achievements.includes(achievement.id)) {
@@ -125,14 +121,12 @@ async function checkAndUnlockAchievements(userId) {
       }
     }
 
-    // Verificar diferentes logros
     if (habits.length >= 1) unlockAchievement('FIRST_HABIT');
     if (user.streak >= 7) unlockAchievement('FIRST_WEEK');
     if (user.streak >= 30) unlockAchievement('STREAK_MASTER');
     if (habits.length >= 10) unlockAchievement('HABIT_EXPLORER');
     if (user.totalHabitsCompleted >= 100) unlockAchievement('CENTURY_CLUB');
 
-    // Verificar hábito maestro
     if (!user.achievements.includes('habit_master')) {
       for (const habit of habits) {
         const completions = habit.completions.filter(c => c.completed).length;
@@ -143,7 +137,6 @@ async function checkAndUnlockAchievements(userId) {
       }
     }
 
-    // Verificar día perfecto
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dayMap = { 0: 'D', 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S' };
@@ -163,7 +156,6 @@ async function checkAndUnlockAchievements(userId) {
       if (allCompletedToday) unlockAchievement('PERFECT_DAY');
     }
 
-    // Actualizar nivel
     const newLevel = Math.floor(user.points / 100) + 1;
     if (newLevel > user.level) {
       user.level = newLevel;
@@ -177,7 +169,6 @@ async function checkAndUnlockAchievements(userId) {
   }
 }
 
-// Obtener progreso de nivel
 async function getLevelProgress(req, res) {
   try {
     if (!req.session.userId) {
