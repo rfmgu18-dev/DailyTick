@@ -268,8 +268,12 @@ function showSection(section) {
 
 async function loadTodayHabits() {
     try {
-        const today = new Date().toISOString().split('T')[0];
-        const response = await fetch(`${API_URL}/habits/${today}`);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayKey = `${year}-${month}-${day}`;
+        const response = await fetch(`${API_URL}/habits/${todayKey}`);
         const data = await response.json();
 
         if (response.ok) {
@@ -315,6 +319,14 @@ async function createDefaultHabits() {
     }
 }
 
+function getTodayDateKey() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function renderHabits(habits) {
     const container = document.getElementById('habitsList');
     container.innerHTML = '';
@@ -329,6 +341,8 @@ function renderHabits(habits) {
         return;
     }
 
+    const todayKey = getTodayDateKey();
+
     habits.forEach(habit => {
         const card = document.createElement('div');
         card.className = `habit-card p-4 rounded-lg border-2 ${habit.completedToday ? 'completed' : ''}`;
@@ -338,7 +352,7 @@ function renderHabits(habits) {
                     <input type="checkbox"
                            class="habit-checkbox"
                            ${habit.completedToday ? 'checked' : ''}
-                           onchange="toggleHabit('${habit._id}', '${new Date().toISOString().split('T')[0]}')"
+                           onchange="toggleHabit('${habit._id}', '${todayKey}')"
                            data-emoji="${habit.emoji}">
                     <div>
                         <h3 class="font-bold text-gray-800">${habit.name}</h3>
@@ -623,7 +637,8 @@ function updateProgress(habits) {
 function updateCurrentDate() {
     const today = new Date();
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('currentDate').textContent = today.toLocaleDateString('es-ES', options);
+    const dateString = today.toLocaleDateString('es-ES', options);
+    document.getElementById('currentDate').textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
 }
 
 function updateUserInfo(user) {
@@ -867,25 +882,23 @@ function selectEmoji(emoji) {
 }
 
 let currentCalendarDate = new Date();
+let selectedDateKey = null; // Guardar el día seleccionado
 
 async function loadCalendar() {
-    // Siempre usar la fecha actual para asegurar que sea el mes correcto
-    currentCalendarDate = new Date();
+    // Usar la fecha actual del calendario (no resetear a hoy cada vez)
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
-
-    console.log('Cargando calendario para:', { year, month, currentDate: currentCalendarDate });
 
     try {
         const response = await fetch(`${API_URL}/stats/month/${year}/${month}`);
         const data = await response.json();
 
-        console.log('Datos del calendario:', data);
-
         if (response.ok) {
-            // Convertir strings de fecha a objetos Date
+            // Convertir strings de fecha a objetos Date usando hora local
             const startDate = new Date(data.startDate);
             const endDate = new Date(data.endDate);
+            console.log('startDate parseado:', startDate);
+            console.log('endDate parseado:', endDate);
             renderCalendar(data.monthlyData, startDate, endDate);
         } else {
             console.error('Error en respuesta del calendario:', data);
@@ -898,8 +911,6 @@ async function loadCalendar() {
 function renderCalendar(monthlyData, startDate, endDate) {
     const container = document.getElementById('calendarView');
     container.innerHTML = '';
-
-    console.log('Renderizando calendario:', { monthlyData, startDate, endDate });
 
     const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -927,7 +938,10 @@ function renderCalendar(monthlyData, startDate, endDate) {
 
     for (let day = 1; day <= endDate.getDate(); day++) {
         const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), day);
-        const dateKey = currentDate.toISOString().split('T')[0];
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const dayNum = String(currentDate.getDate()).padStart(2, '0');
+        const dateKey = `${year}-${month}-${dayNum}`;
         const dayData = monthlyData[dateKey] || { completed: 0, total: 0, rate: 0, habits: [] };
 
         const dayCell = document.createElement('div');
@@ -964,11 +978,23 @@ function renderCalendar(monthlyData, startDate, endDate) {
 
     container.appendChild(grid);
 
-    // Mostrar hábitos del día actual por defecto
+    // Mostrar hábitos del día seleccionado o del día actual por defecto
     const today = new Date();
-    const todayKey = today.toISOString().split('T')[0];
-    const todayData = monthlyData[todayKey] || { completed: 0, total: 0, rate: 0, habits: [] };
-    showDayDetails(todayKey, todayData);
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayKey = `${year}-${month}-${day}`;
+
+    // Si hay un día seleccionado y está en el mes actual, mostrarlo
+    if (selectedDateKey && monthlyData[selectedDateKey]) {
+        const selectedData = monthlyData[selectedDateKey];
+        showDayDetails(selectedDateKey, selectedData);
+    } else {
+        // Si no, mostrar el día actual
+        const todayData = monthlyData[todayKey] || { completed: 0, total: 0, rate: 0, habits: [] };
+        showDayDetails(todayKey, todayData);
+        selectedDateKey = todayKey;
+    }
 }
 
 function showDayDetails(dateKey, dayData) {
@@ -976,18 +1002,21 @@ function showDayDetails(dateKey, dayData) {
     const selectedDateTitle = document.getElementById('selectedDateTitle');
     const dayHabitsList = document.getElementById('dayHabitsList');
 
-    console.log('Mostrando detalles del día:', { dateKey, dayData });
+    // Guardar el día seleccionado
+    selectedDateKey = dateKey;
 
     // Convertir dateKey a fecha local correcta
     const [year, month, day] = dateKey.split('-').map(Number);
     const date = new Date(year, month - 1, day);
 
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    selectedDateTitle.textContent = date.toLocaleDateString('es-ES', options);
+    const dateString = date.toLocaleDateString('es-ES', options);
+    selectedDateTitle.textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
 
     dayHabitsList.innerHTML = '';
 
     if (dayData.habits && dayData.habits.length > 0) {
+        console.log('Renderizando', dayData.habits.length, 'hábitos');
         dayData.habits.forEach(habit => {
             const habitItem = document.createElement('div');
             habitItem.className = `flex items-center justify-between p-4 rounded-lg ${habit.completed ? 'bg-green-100 border-2 border-green-300' : 'bg-gray-100 border-2 border-gray-200'}`;
@@ -1001,6 +1030,7 @@ function showDayDetails(dateKey, dayData) {
             dayHabitsList.appendChild(habitItem);
         });
     } else {
+        console.log('No hay hábitos para mostrar');
         dayHabitsList.innerHTML = '<p class="text-gray-500 text-center py-4">No hay hábitos para este día</p>';
     }
 
@@ -1008,9 +1038,7 @@ function showDayDetails(dateKey, dayData) {
 }
 
 function navigateCalendar(direction) {
-    console.log('Navegando calendario:', direction);
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
-    console.log('Nueva fecha del calendario:', currentCalendarDate);
     loadCalendar();
 }
 

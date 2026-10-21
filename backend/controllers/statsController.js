@@ -213,8 +213,10 @@ async function getMonthlyData(req, res) {
 
     const { year, month } = req.params;
 
-    const startDate = new Date(year, month, 1);
-    const endDate = new Date(year, month + 1, 0);
+    const yearNum = parseInt(year);
+    const monthNum = parseInt(month);
+    const startDate = new Date(yearNum, monthNum, 1);
+    const endDate = new Date(yearNum, monthNum + 1, 0);
 
     const habits = await Habit.find({ user: req.session.userId, active: true });
 
@@ -225,27 +227,22 @@ async function getMonthlyData(req, res) {
 
     // Inicializar datos para cada día del mes
     for (let day = 1; day <= endDate.getDate(); day++) {
-      const currentDate = new Date(year, month, day);
-      const dateKey = currentDate.toISOString().split('T')[0];
-      const dayOfWeek = currentDate.getDay();
-      const dayLetter = dayMap[dayOfWeek];
-
-      // Calcular hábitos programados para este día según su frequency
-      const scheduledHabits = habits.filter(habit => habit.frequency.includes(dayLetter));
+      const currentDate = new Date(yearNum, monthNum, day);
+      const dateKey = `${yearNum}-${String(monthNum + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
       monthlyData[dateKey] = {
-        total: scheduledHabits.length,
+        total: habits.length,
         completed: 0,
         rate: 0,
         habits: []
       };
 
-      // Buscar completions para este día
-      scheduledHabits.forEach(habit => {
+      // Agregar TODOS los hábitos para este día
+      habits.forEach(habit => {
         const completion = habit.completions.find(comp => {
           const compDate = new Date(comp.date);
           compDate.setHours(0, 0, 0, 0);
-          const targetDate = new Date(year, month, day);
+          const targetDate = new Date(yearNum, monthNum, day);
           targetDate.setHours(0, 0, 0, 0);
           return compDate.getTime() === targetDate.getTime();
         });
@@ -256,7 +253,6 @@ async function getMonthlyData(req, res) {
           monthlyData[dateKey].completed++;
         }
 
-        // Agregar hábito con sus datos completos
         monthlyData[dateKey].habits.push({
           name: habit.name,
           emoji: habit.emoji,

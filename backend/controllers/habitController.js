@@ -55,6 +55,15 @@ async function toggleHabitCompletion(req, res) {
     const { habitId } = req.params;
     const { date } = req.body;
 
+    // Obtener la fecha actual del servidor (local)
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // Validar que solo se pueda modificar hábitos del día actual
+    if (date !== todayKey) {
+      return res.status(403).json({ message: 'Solo puedes modificar hábitos del día actual' });
+    }
+
     const habit = await Habit.findOne({
       _id: habitId,
       user: req.session.userId
@@ -64,11 +73,17 @@ async function toggleHabitCompletion(req, res) {
       return res.status(404).json({ message: 'Hábito no encontrado' });
     }
 
-    const targetDate = new Date(date);
+    // Parsear la fecha usando hora local (no UTC)
+    const [year, month, day] = date.split('-').map(Number);
+    const targetDate = new Date(year, month - 1, day);
     targetDate.setHours(0, 0, 0, 0);
 
     const existingCompletion = habit.completions.find(
-      c => new Date(c.date).toDateString() === targetDate.toDateString()
+      c => {
+        const compDate = new Date(c.date);
+        compDate.setHours(0, 0, 0, 0);
+        return compDate.getTime() === targetDate.getTime();
+      }
     );
 
     if (existingCompletion) {
@@ -175,7 +190,10 @@ async function getHabitsByDate(req, res) {
     }
 
     const { date } = req.params;
-    const targetDate = new Date(date);
+
+    // Parsear la fecha usando hora local (no UTC)
+    const [year, month, day] = date.split('-').map(Number);
+    const targetDate = new Date(year, month - 1, day);
     targetDate.setHours(0, 0, 0, 0);
 
     const habits = await Habit.find({
@@ -183,17 +201,16 @@ async function getHabitsByDate(req, res) {
       active: true
     });
 
-    const dayOfWeek = targetDate.getDay();
-    const dayMap = { 0: 'D', 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S' };
-    const dayLetter = dayMap[dayOfWeek];
-
-    const filteredHabits = habits.filter(habit => 
-      habit.frequency.includes(dayLetter)
-    ).map(habit => {
+    // Devolver TODOS los hábitos sin filtrar por frecuencia
+    const habitsWithStatus = habits.map(habit => {
       const completion = habit.completions.find(
-        c => new Date(c.date).toDateString() === targetDate.toDateString()
+        c => {
+          const compDate = new Date(c.date);
+          compDate.setHours(0, 0, 0, 0);
+          return compDate.getTime() === targetDate.getTime();
+        }
       );
-      
+
       return {
         ...habit.toObject(),
         completedToday: completion ? completion.completed : false,
@@ -201,7 +218,7 @@ async function getHabitsByDate(req, res) {
       };
     });
 
-    res.json({ habits: filteredHabits, date: targetDate });
+    res.json({ habits: habitsWithStatus, date: targetDate });
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener hábitos', error: error.message });
   }
