@@ -403,6 +403,11 @@ async function toggleHabit(habitId, date) {
             if (meResponse.ok) {
                 updateUserInfo(meData.user);
             }
+            // Recargar calendario si está visible
+            const calendarSection = document.getElementById('calendarSection');
+            if (!calendarSection.classList.contains('hidden')) {
+                loadCalendar();
+            }
         } else {
             showAlert(data.message || 'Error al actualizar hábito', 'error');
         }
@@ -867,6 +872,8 @@ async function loadCalendar() {
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
 
+    console.log('Cargando calendario para:', { year, month, currentDate: currentCalendarDate });
+
     try {
         const response = await fetch(`${API_URL}/stats/month/${year}/${month}`);
         const data = await response.json();
@@ -966,6 +973,8 @@ function showDayDetails(dateKey, dayData) {
     const dayDetails = document.getElementById('dayDetails');
     const selectedDateTitle = document.getElementById('selectedDateTitle');
     const dayHabitsList = document.getElementById('dayHabitsList');
+
+    console.log('Mostrando detalles del día:', { dateKey, dayData });
 
     // Convertir dateKey a fecha local correcta
     const [year, month, day] = dateKey.split('-').map(Number);
