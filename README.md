@@ -116,43 +116,6 @@ Una aplicación web FullStack moderna y completa para seguimiento de hábitos co
 - **MongoDB Atlas**: Base de datos NoSQL en la nube
 - **Mongoose**: ODM para MongoDB con esquemas
 
-## 📦 Instalación
-
-### Prerrequisitos
-- Node.js 18+ instalado
-- Cuenta en MongoDB Atlas
-- Git (opcional)
-
-### Pasos de instalación
-
-1. **Clonar el repositorio**
-```bash
-git clone https://github.com/rfmgu18-dev/DailyTick.git
-cd DailyTick
-```
-
-2. **Instalar dependencias**
-```bash
-npm install
-```
-
-3. **Configurar variables de entorno**
-Crear un archivo `.env` en la raíz del proyecto:
-```env
-MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/dailytick
-PORT=3000
-SESSION_SECRET=tu-secreto-aqui
-JWT_SECRET=tu-secreto-jwt-aqui
-NODE_ENV=development
-```
-
-4. **Iniciar el servidor**
-```bash
-npm start
-```
-
-La aplicación estará disponible en http://localhost:3000
-
 ## 🔐 Variables de Entorno
 
 | Variable | Descripción | Ejemplo |
@@ -194,35 +157,6 @@ DailyTick/
 ├── package.json             # Dependencias
 └── .env                     # Variables de entorno (no incluido en repo)
 ```
-
-## 🔌 API Endpoints
-
-### Autenticación
-- `POST /api/auth/register` - Registro de usuario
-- `POST /api/auth/login` - Inicio de sesión
-- `POST /api/auth/logout` - Cierre de sesión
-- `GET /api/auth/me` - Obtener usuario actual
-- `PUT /api/auth/profile` - Actualizar perfil
-- `PUT /api/auth/password` - Cambiar contraseña
-- `PUT /api/auth/settings` - Actualizar configuración
-- `DELETE /api/auth/account` - Eliminar cuenta
-
-### Hábitos
-- `GET /api/habits` - Obtener todos los hábitos
-- `GET /api/habits/:date` - Obtener hábitos de una fecha
-- `POST /api/habits` - Crear hábito
-- `POST /api/habits/default` - Crear hábitos por defecto
-- `PUT /api/habits/:habitId` - Actualizar hábito
-- `PUT /api/habits/:habitId/toggle` - Marcar/desmarcar hábito
-- `DELETE /api/habits/:habitId` - Eliminar hábito
-
-### Estadísticas
-- `GET /api/stats` - Obtener estadísticas generales
-- `GET /api/stats/month/:year/:month` - Obtener datos mensuales
-
-### Logros
-- `GET /api/achievements` - Obtener logros del usuario
-- `GET /api/achievements/level-progress` - Obtener progreso de nivel
 
 ## 🎯 Estado del Proyecto
 
