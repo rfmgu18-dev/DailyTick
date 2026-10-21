@@ -534,6 +534,9 @@ async function loadStats() {
         if (response.ok) {
             updateStatsUI(data);
             loadLevelProgress(); // Cargar progreso del nivel también
+            // Actualizar racha en sidebar
+            const userStreak = document.getElementById('userStreak');
+            if (userStreak) userStreak.textContent = data.currentStreak || 0;
         }
     } catch (error) {
         console.error('Error al cargar estadísticas:', error);
@@ -951,6 +954,12 @@ function renderCalendar(monthlyData, startDate, endDate) {
     }
 
     container.appendChild(grid);
+
+    // Mostrar hábitos del día actual por defecto
+    const today = new Date();
+    const todayKey = today.toISOString().split('T')[0];
+    const todayData = monthlyData[todayKey] || { completed: 0, total: 0, rate: 0, habits: [] };
+    showDayDetails(todayKey, todayData);
 }
 
 function showDayDetails(dateKey, dayData) {
