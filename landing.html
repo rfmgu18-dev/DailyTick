@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyTick - Habit Tracker & Daily Log</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .feature-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .cta-button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div class="max-w-4xl w-full">
+        <!-- Hero Section -->
+        <div class="glass-card rounded-3xl p-8 md:p-12 text-center">
+            <!-- Logo -->
+            <div class="flex justify-center mb-8">
+                <div class="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-2xl">
+                    <span class="text-5xl">📊</span>
+                </div>
+            </div>
+            
+            <!-- Title -->
+            <h1 class="text-4xl md:text-6xl font-bold text-white mb-4">
+                <span class="bg-gradient-to-r from-green-300 to-emerald-200 bg-clip-text text-transparent">DailyTick</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-white/80 mb-8">
+                Habit Tracker & Daily Log
+            </p>
+            
+            <!-- Description -->
+            <p class="text-lg text-white/70 mb-12 max-w-2xl mx-auto">
+                Una aplicación moderna diseñada para ayudarte a construir rutinas sólidas, organizar tu día a día y medir tu consistencia a través de una interfaz limpia, intuitiva y minimalista.
+            </p>
+            
+            <!-- Features -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="feature-icon text-4xl mb-4">✅</div>
+                    <h3 class="text-white font-semibold mb-2">Seguimiento de Hábitos</h3>
+                    <p class="text-white/60 text-sm">Crea y personaliza tus hábitos con emojis, categorías y frecuencias</p>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="feature-icon text-4xl mb-4">📊</div>
+                    <h3 class="text-white font-semibold mb-2">Estadísticas</h3>
+                    <p class="text-white/60 text-sm">Visualiza tu progreso con gráficos y métricas de cumplimiento</p>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="feature-icon text-4xl mb-4">🎮</div>
+                    <h3 class="text-white font-semibold mb-2">Gamificación</h3>
+                    <p class="text-white/60 text-sm">Sistema de logros, puntos y niveles para mantenerte motivado</p>
+                </div>
+            </div>
+            
+            <!-- CTA Button -->
+            <a href="/auth" class="cta-button inline-block px-8 py-4 rounded-xl text-white font-semibold text-lg">
+                Comenzar Ahora →
+            </a>
+            
+            <!-- Additional Info -->
+            <div class="mt-12 pt-8 border-t border-white/20">
+                <p class="text-white/50 text-sm">
+                    Totalmente gratuito • Sin límites de uso • Tu privacidad es nuestra prioridad
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Redirect to app after 3 seconds if user doesn't click
+        setTimeout(() => {
+            window.location.href = '/auth';
+        }, 8000);
+    </script>
+</body>
+</html>
