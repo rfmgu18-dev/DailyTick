@@ -90,8 +90,16 @@
 
     <!-- Main App Section -->
     <div id="appSection" class="hidden min-h-screen flex">
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            ☰
+        </button>
+
+        <!-- Mobile Overlay -->
+        <div class="mobile-overlay" id="mobileOverlay"></div>
+
         <!-- Sidebar -->
-        <aside class="w-64 bg-white shadow-lg">
+        <aside class="w-64 bg-white shadow-lg" id="sidebar">
             <div class="p-6 border-b bg-gradient-to-r from-green-50 to-emerald-50">
                 <div class="flex items-center space-x-3 mb-4">
                     <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
@@ -147,7 +155,7 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 p-8">
+        <main class="flex-1 p-4 md:p-8">
             <!-- Home Section -->
             <div id="homeSection">
                 <div class="flex justify-between items-center mb-6">

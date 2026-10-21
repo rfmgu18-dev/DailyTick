@@ -52,13 +52,13 @@ function showApp(user) {
 
 function setupEventListeners() {
     console.log('Configurando event listeners');
-    
+
     const loginFormElement = document.getElementById('loginFormElement');
     const registerFormElement = document.getElementById('registerFormElement');
-    
+
     console.log('loginFormElement:', loginFormElement);
     console.log('registerFormElement:', registerFormElement);
-    
+
     if (loginFormElement) {
         loginFormElement.addEventListener('submit', handleLogin);
         console.log('Listener de login agregado');
@@ -67,13 +67,13 @@ function setupEventListeners() {
         registerFormElement.addEventListener('submit', handleRegister);
         console.log('Listener de registro agregado');
     }
-    
+
     const showRegisterBtn = document.getElementById('showRegister');
     const showLoginBtn = document.getElementById('showLogin');
-    
+
     console.log('showRegisterBtn:', showRegisterBtn);
     console.log('showLoginBtn:', showLoginBtn);
-    
+
     if (showRegisterBtn) {
         showRegisterBtn.addEventListener('click', () => {
             document.getElementById('loginForm').classList.add('hidden');
@@ -100,6 +100,36 @@ function setupEventListeners() {
     if (navCalendar) navCalendar.addEventListener('click', () => showSection('calendar'));
     if (navSettings) navSettings.addEventListener('click', () => showSection('settings'));
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+
+    // Mobile menu toggle
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    const sidebar = document.getElementById('sidebar');
+
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+            mobileOverlay.classList.toggle('active');
+        });
+    }
+
+    if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('mobile-open');
+            mobileOverlay.classList.remove('active');
+        });
+    }
+
+    // Close mobile menu when clicking on nav items
+    const navButtons = [navHome, navHabits, navStats, navCalendar, navSettings];
+    navButtons.forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                sidebar.classList.remove('mobile-open');
+                mobileOverlay.classList.remove('active');
+            });
+        }
+    });
 
     const addHabitBtn = document.getElementById('addHabitBtn');
     const addNewHabitBtn = document.getElementById('addNewHabitBtn');
