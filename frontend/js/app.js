@@ -869,6 +869,8 @@ function selectEmoji(emoji) {
 let currentCalendarDate = new Date();
 
 async function loadCalendar() {
+    // Siempre usar la fecha actual para asegurar que sea el mes correcto
+    currentCalendarDate = new Date();
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
 

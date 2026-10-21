@@ -256,10 +256,14 @@ async function getMonthlyData(req, res) {
           monthlyData[dateKey].completed++;
         }
 
+        // Agregar hábito con sus datos completos
         monthlyData[dateKey].habits.push({
           name: habit.name,
           emoji: habit.emoji,
-          completed: isCompleted
+          completed: isCompleted,
+          _id: habit._id,
+          category: habit.category,
+          duration: habit.duration
         });
       });
 
