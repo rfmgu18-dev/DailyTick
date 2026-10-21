@@ -397,6 +397,12 @@ async function toggleHabit(habitId, date) {
                 showAlert(`¡Logro desbloqueado: ${data.newAchievements[0].name}!`, 'success');
             }
             loadTodayHabits();
+            // Recargar datos del usuario para actualizar sidebar
+            const meResponse = await fetch(`${API_URL}/auth/me`);
+            const meData = await meResponse.json();
+            if (meResponse.ok) {
+                updateUserInfo(meData.user);
+            }
         } else {
             showAlert(data.message || 'Error al actualizar hábito', 'error');
         }
@@ -507,7 +513,7 @@ async function editHabit(habitId) {
                 document.getElementById('habitDurationUnit').value = habit.duration.unit;
 
                 document.querySelectorAll('.freq-checkbox').forEach(cb => {
-                    cb.checked = habit.frequency.includes(cb.value);
+                    cb.checked = true; // Marcar todos los días por defecto al editar
                     cb.dispatchEvent(new Event('change'));
                 });
 
@@ -952,7 +958,10 @@ function showDayDetails(dateKey, dayData) {
     const selectedDateTitle = document.getElementById('selectedDateTitle');
     const dayHabitsList = document.getElementById('dayHabitsList');
 
-    const date = new Date(dateKey);
+    // Convertir dateKey a fecha local correcta
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     selectedDateTitle.textContent = date.toLocaleDateString('es-ES', options);
 
