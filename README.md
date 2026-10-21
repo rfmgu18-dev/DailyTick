@@ -4,7 +4,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
 
-Una aplicación webFullStack moderna y completa para seguimiento de hábitos con sistema de gamificación, estadísticas en tiempo real y una interfaz de usuario pulida y moderna.
+Una aplicación web FullStack moderna y completa para seguimiento de hábitos con sistema de gamificación, estadísticas en tiempo real y una interfaz de usuario pulida y moderna.
 
 ## � Capturas
 
