@@ -33,6 +33,16 @@ const habitSchema = new mongoose.Schema({
       default: 'min'
     }
   },
+  schedule: {
+    time: {
+      type: String,
+      default: null
+    },
+    deadline: {
+      type: String,
+      default: null
+    }
+  },
   active: {
     type: Boolean,
     default: true

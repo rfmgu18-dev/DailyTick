@@ -237,13 +237,22 @@ async function getMonthlyData(req, res) {
         habits: []
       };
 
-      // Agregar TODOS los hábitos para este día
+      // Agregar hábitos para este día (filtrando por fecha de creación)
       habits.forEach(habit => {
+        // Verificar que el hábito existía en esta fecha
+        const habitCreatedAt = new Date(habit.createdAt);
+        habitCreatedAt.setHours(0, 0, 0, 0);
+        const targetDate = new Date(yearNum, monthNum, day);
+        targetDate.setHours(0, 0, 0, 0);
+
+        // Solo mostrar hábitos que ya existían en esta fecha
+        if (habitCreatedAt > targetDate) {
+          return; // Saltar hábitos creados después de esta fecha
+        }
+
         const completion = habit.completions.find(comp => {
           const compDate = new Date(comp.date);
           compDate.setHours(0, 0, 0, 0);
-          const targetDate = new Date(yearNum, monthNum, day);
-          targetDate.setHours(0, 0, 0, 0);
           return compDate.getTime() === targetDate.getTime();
         });
 

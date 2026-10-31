@@ -25,7 +25,20 @@ async function register(req, res) {
       return res.status(400).json({ message: 'El email ya está registrado' });
     }
 
-    const user = await User.create({ name, email, password });
+    // Verificar si el email es de administrador
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const isAdmin = adminEmail && email.toLowerCase().trim() === adminEmail.toLowerCase().trim();
+    console.log('Email registrado:', email);
+    console.log('ADMIN_EMAIL:', adminEmail);
+    console.log('Es admin:', isAdmin);
+
+    const user = await User.create({ 
+      name, 
+      email, 
+      password,
+      role: isAdmin ? 'admin' : 'user',
+      isAdmin: isAdmin
+    });
 
     await Habit.create([
       {
@@ -60,7 +73,9 @@ async function register(req, res) {
         email: user.email,
         theme: user.theme,
         points: user.points,
-        level: user.level
+        level: user.level,
+        role: user.role,
+        isAdmin: user.isAdmin
       },
       token: generateToken(user._id)
     });
@@ -100,7 +115,9 @@ async function login(req, res) {
         achievements: user.achievements,
         theme: user.theme,
         points: user.points,
-        level: user.level
+        level: user.level,
+        role: user.role,
+        isAdmin: user.isAdmin
       },
       token: generateToken(user._id)
     });
@@ -128,6 +145,10 @@ async function getCurrentUser(req, res) {
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
+
+    // Recalcular racha antes de enviar datos
+    await user.updateStreak();
+    await user.save();
 
     res.json({ user });
   } catch (error) {

@@ -1,5 +1,6 @@
 const Habit = require('../models/Habit');
 const User = require('../models/User');
+const Goal = require('../models/Goal');
 const { checkAndUnlockAchievements } = require('./achievementController');
 
 async function getHabits(req, res) {
@@ -25,10 +26,17 @@ async function createHabit(req, res) {
       return res.status(401).json({ message: 'No autenticado' });
     }
 
-    const { name, emoji, category, frequency, duration } = req.body;
+    const { name, emoji, category, frequency, duration, schedule } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'El nombre del hábito es requerido' });
+    }
+
+    // Validar schedule si existe
+    if (schedule && schedule.time && schedule.deadline) {
+      if (schedule.deadline <= schedule.time) {
+        return res.status(400).json({ message: 'El deadline debe ser posterior a la hora del hábito' });
+      }
     }
 
     const habit = await Habit.create({
@@ -37,12 +45,55 @@ async function createHabit(req, res) {
       emoji: emoji || '✓',
       category: category || 'Otro',
       frequency: frequency || ['L', 'M', 'X', 'J', 'V', 'S', 'D'],
-      duration: duration || { value: 1, unit: 'min' }
+      duration: duration || { value: 1, unit: 'min' },
+      schedule: schedule || { time: null, deadline: null }
     });
 
     res.status(201).json({ message: 'Hábito creado exitosamente', habit });
   } catch (error) {
     res.status(500).json({ message: 'Error al crear hábito', error: error.message });
+  }
+}
+
+// Función auxiliar para calcular progreso de metas
+async function calculateGoalProgress(goal) {
+  const habit = await Habit.findById(goal.habit._id || goal.habit);
+  let progress = 0;
+
+  if (goal.conditionType === 'times') {
+    const now = new Date();
+    let startDate, endDate;
+
+    const periodDays = getPeriodDays(goal.timesCondition.period);
+    endDate = now;
+    startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - periodDays);
+
+    const completionsInPeriod = habit.completions.filter(comp => {
+      const compDate = new Date(comp.date);
+      return compDate >= startDate && compDate <= endDate && comp.completed;
+    }).length;
+
+    progress = Math.min((completionsInPeriod / goal.timesCondition.targetTimes) * 100, 100);
+    goal.timesCondition.currentCount = completionsInPeriod;
+  } else if (goal.conditionType === 'hours') {
+    if (goal.hoursCondition.totalHours > 0) {
+      const currentHours = habit.duration.value || 0;
+      progress = Math.min((currentHours / goal.hoursCondition.totalHours) * 100, 100);
+      goal.hoursCondition.currentHours = currentHours;
+    }
+  }
+
+  await goal.save();
+  return Math.round(progress);
+}
+
+function getPeriodDays(period) {
+  switch (period) {
+    case 'day': return 1;
+    case 'week': return 7;
+    case 'month': return 30;
+    default: return 7;
   }
 }
 
@@ -113,6 +164,29 @@ async function toggleHabitCompletion(req, res) {
 
     await habit.save();
 
+    // Actualizar progreso de metas asociadas a este hábito
+    try {
+      const goals = await Goal.find({ habit: habitId, user: req.session.userId, status: 'active' });
+      console.log(`Actualizando ${goals.length} metas para el hábito ${habitId}`);
+
+      for (const goal of goals) {
+        const progress = await calculateGoalProgress(goal);
+        goal.progress = progress;
+
+        // Verificar si la meta se completó
+        if (progress >= 100 && goal.status === 'active') {
+          goal.status = 'completed';
+          goal.completedAt = new Date();
+        }
+
+        await goal.save();
+        console.log(`Meta ${goal._id} actualizada: ${progress}%`);
+      }
+    } catch (goalError) {
+      console.error('Error al actualizar metas:', goalError);
+      // No fallar la operación principal si falla la actualización de metas
+    }
+
     const newAchievements = await checkAndUnlockAchievements(req.session.userId);
 
     res.json({
@@ -132,7 +206,7 @@ async function updateHabit(req, res) {
     }
 
     const { habitId } = req.params;
-    const { name, emoji, category, frequency, duration } = req.body;
+    const { name, emoji, category, frequency, duration, schedule } = req.body;
 
     const habit = await Habit.findOne({
       _id: habitId,
@@ -143,11 +217,19 @@ async function updateHabit(req, res) {
       return res.status(404).json({ message: 'Hábito no encontrado' });
     }
 
+    // Validar schedule si existe
+    if (schedule && schedule.time && schedule.deadline) {
+      if (schedule.deadline <= schedule.time) {
+        return res.status(400).json({ message: 'El deadline debe ser posterior a la hora del hábito' });
+      }
+    }
+
     if (name) habit.name = name;
     if (emoji) habit.emoji = emoji;
     if (category) habit.category = category;
     if (frequency) habit.frequency = frequency;
     if (duration) habit.duration = duration;
+    if (schedule) habit.schedule = schedule;
 
     await habit.save();
 

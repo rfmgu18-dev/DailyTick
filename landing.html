@@ -7,101 +7,331 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
+
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             min-height: 100vh;
+            overflow-x: hidden;
         }
-        
+
         .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
         }
-        
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
         .feature-icon {
             animation: float 3s ease-in-out infinite;
         }
-        
+
         @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
         }
-        
+
         .cta-button {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
-        
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
         .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        .secondary-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .secondary-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Fade in animations */
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-up {
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stats animation */
+        .stat-number {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Decorative particles */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(16, 185, 129, 0.3);
+            border-radius: 50%;
+            animation: particleFloat 8s ease-in-out infinite;
+        }
+
+        @keyframes particleFloat {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+            50% { transform: translateY(-100px) translateX(50px); opacity: 0.8; }
+        }
+
+        /* Logo glow effect */
+        .logo-glow {
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes logoGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.6); }
+        }
+
+        /* Mobile responsive adjustments */
+        @media (max-width: 768px) {
+            .glass-card {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2.5rem !important;
+            }
+
+            h2 {
+                font-size: 1.75rem !important;
+            }
+
+            .particle {
+                display: none;
+            }
         }
     </style>
 </head>
-<body class="flex items-center justify-center p-4">
-    <div class="max-w-4xl w-full">
+<body class="p-4 md:p-8 relative">
+    <!-- Decorative particles -->
+    <div class="particle" style="top: 10%; left: 10%;"></div>
+    <div class="particle" style="top: 20%; right: 15%; animation-delay: 2s;"></div>
+    <div class="particle" style="top: 60%; left: 5%; animation-delay: 4s;"></div>
+    <div class="particle" style="top: 80%; right: 10%; animation-delay: 1s;"></div>
+
+    <div class="max-w-6xl mx-auto">
         <!-- Hero Section -->
-        <div class="glass-card rounded-3xl p-8 md:p-12 text-center">
+        <div class="glass-card rounded-3xl p-8 md:p-16 text-center mb-8 fade-in">
             <!-- Logo -->
             <div class="flex justify-center mb-8">
-                <div class="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-2xl">
-                    <span class="text-5xl">📊</span>
+                <div class="w-28 h-28 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-2xl logo-glow">
+                    <span class="text-6xl">📊</span>
                 </div>
             </div>
-            
+
             <!-- Title -->
-            <h1 class="text-4xl md:text-6xl font-bold text-white mb-4">
+            <h1 class="text-5xl md:text-7xl font-bold text-white mb-4 slide-up">
                 <span class="bg-gradient-to-r from-green-300 to-emerald-200 bg-clip-text text-transparent">DailyTick</span>
             </h1>
-            <p class="text-xl md:text-2xl text-white/80 mb-8">
+            <p class="text-2xl md:text-3xl text-white/80 mb-6 slide-up" style="animation-delay: 0.2s;">
                 Habit Tracker & Daily Log
             </p>
-            
+
             <!-- Description -->
-            <p class="text-lg text-white/70 mb-12 max-w-2xl mx-auto">
-                Una aplicación moderna diseñada para ayudarte a construir rutinas sólidas, organizar tu día a día y medir tu consistencia a través de una interfaz limpia, intuitiva y minimalista.
+            <p class="text-lg md:text-xl text-white/70 mb-10 max-w-3xl mx-auto leading-relaxed slide-up" style="animation-delay: 0.4s;">
+                Construye hábitos saludables, alcanza tus metas y mide tu progreso con nuestra aplicación de seguimiento de hábitos.
+                Interfaz intuitiva, gamificación y estadísticas detalladas para mantenerte motivado.
             </p>
-            
-            <!-- Features -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <div class="glass-card rounded-xl p-6">
-                    <div class="feature-icon text-4xl mb-4">✅</div>
-                    <h3 class="text-white font-semibold mb-2">Seguimiento de Hábitos</h3>
-                    <p class="text-white/60 text-sm">Crea y personaliza tus hábitos con emojis, categorías y frecuencias</p>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12 slide-up" style="animation-delay: 0.6s;">
+                <a href="/auth" class="cta-button inline-block px-10 py-4 rounded-xl text-white font-semibold text-lg">
+                    🚀 Comenzar Gratis
+                </a>
+                <a href="#features" class="secondary-button inline-block px-10 py-4 rounded-xl text-white font-semibold text-lg">
+                    👇 Saber Más
+                </a>
+            </div>
+
+            <!-- Trust Badges -->
+            <div class="flex flex-wrap justify-center gap-6 text-white/60 text-sm slide-up" style="animation-delay: 0.8s;">
+                <span>✓ 100% Gratuito</span>
+                <span>✓ Sin anuncios</span>
+                <span>✓ Datos seguros</span>
+                <span>✓ Funciona offline</span>
+            </div>
+        </div>
+        
+        <!-- Stats Section -->
+        <div class="glass-card rounded-3xl p-8 md:p-12 mb-8">
+            <h2 class="text-3xl md:text-4xl font-bold text-white text-center mb-12">
+                Únete a Nuestra Comunidad
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="text-5xl md:text-6xl font-bold stat-number mb-2">10K+</div>
+                    <p class="text-white/60 text-lg">Usuarios Activos</p>
                 </div>
-                <div class="glass-card rounded-xl p-6">
-                    <div class="feature-icon text-4xl mb-4">📊</div>
-                    <h3 class="text-white font-semibold mb-2">Estadísticas</h3>
-                    <p class="text-white/60 text-sm">Visualiza tu progreso con gráficos y métricas de cumplimiento</p>
+                <div class="text-center">
+                    <div class="text-5xl md:text-6xl font-bold stat-number mb-2">1M+</div>
+                    <p class="text-white/60 text-lg">Hábitos Completados</p>
                 </div>
-                <div class="glass-card rounded-xl p-6">
-                    <div class="feature-icon text-4xl mb-4">🎮</div>
-                    <h3 class="text-white font-semibold mb-2">Gamificación</h3>
-                    <p class="text-white/60 text-sm">Sistema de logros, puntos y niveles para mantenerte motivado</p>
+                <div class="text-center">
+                    <div class="text-5xl md:text-6xl font-bold stat-number mb-2">95%</div>
+                    <p class="text-white/60 text-lg">Tasa de Satisfacción</p>
                 </div>
             </div>
+        </div>
+
+        <!-- Features Section -->
+        <div id="features" class="glass-card rounded-3xl p-8 md:p-12 mb-8">
+            <h2 class="text-3xl md:text-4xl font-bold text-white text-center mb-12">
+                Características Principales
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="feature-icon text-4xl mb-4">✅</div>
+                    <h3 class="text-white font-semibold text-lg mb-2">Seguimiento de Hábitos</h3>
+                    <p class="text-white/60 text-sm">Crea hábitos personalizados con emojis, categorías, frecuencias y duraciones específicas.</p>
+                </div>
+
+                <div class="glass-card rounded-xl p-6">
+                    <div class="feature-icon text-4xl mb-4" style="animation-delay: 0.5s;">📊</div>
+                    <h3 class="text-white font-semibold text-lg mb-2">Estadísticas Detalladas</h3>
+                    <p class="text-white/60 text-sm">Visualiza tu progreso con gráficos semanales, rachas, tasas de cumplimiento y más.</p>
+                </div>
+
+                <div class="glass-card rounded-xl p-6">
+                    <div class="feature-icon text-4xl mb-4" style="animation-delay: 1s;">📅</div>
+                    <h3 class="text-white font-semibold text-lg mb-2">Calendario Interactivo</h3>
+                    <p class="text-white/60 text-sm">Navega por tu historial con un calendario mensual que muestra tu progreso día a día.</p>
+                </div>
+
+                <div class="glass-card rounded-xl p-6">
+                    <div class="feature-icon text-4xl mb-4" style="animation-delay: 1.5s;">🎮</div>
+                    <h3 class="text-white font-semibold text-lg mb-2">Gamificación</h3>
+                    <p class="text-white/60 text-sm">Sistema de puntos, niveles y logros desbloqueables para mantenerte motivado.</p>
+                </div>
+
+                <div class="glass-card rounded-xl p-6">
+                    <div class="feature-icon text-4xl mb-4" style="animation-delay: 2s;">🎯</div>
+                    <h3 class="text-white font-semibold text-lg mb-2">Metas y Objetivos</h3>
+                    <p class="text-white/60 text-sm">Define metas específicas para tus hábitos con condiciones de frecuencia y duración.</p>
+                </div>
+
+                <div class="glass-card rounded-xl p-6">
+                    <div class="feature-icon text-4xl mb-4" style="animation-delay: 2.5s;">🔔</div>
+                    <h3 class="text-white font-semibold text-lg mb-2">Recordatorios Inteligentes</h3>
+                    <p class="text-white/60 text-sm">Recibe notificaciones cuando tus hábitos estén por cumplir su tiempo límite.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Benefits Section -->
+        <div class="glass-card rounded-3xl p-8 md:p-12 mb-8">
+            <h2 class="text-3xl md:text-4xl font-bold text-white text-center mb-12">
+                ¿Por qué DailyTick?
+            </h2>
             
-            <!-- CTA Button -->
-            <a href="/auth" class="cta-button inline-block px-8 py-4 rounded-xl text-white font-semibold text-lg">
-                Comenzar Ahora →
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="flex items-start gap-4">
+                    <div class="text-3xl">💪</div>
+                    <div>
+                        <h3 class="text-white font-semibold text-lg mb-2">Construye Rutinas Sólidas</h3>
+                        <p class="text-white/60 text-sm">El seguimiento consistente es la clave para formar hábitos duraderos. DailyTick te ayuda a mantener el rumbo.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-4">
+                    <div class="text-3xl">📈</div>
+                    <div>
+                        <h3 class="text-white font-semibold text-lg mb-2">Mide Tu Progreso</h3>
+                        <p class="text-white/60 text-sm">Visualiza tu evolución con estadísticas detalladas que te muestran dónde estás y hacia dónde vas.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-4">
+                    <div class="text-3xl">🏆</div>
+                    <div>
+                        <h3 class="text-white font-semibold text-lg mb-2">Mantente Motivado</h3>
+                        <p class="text-white/60 text-sm">El sistema de gamificación con puntos, niveles y logros hace que cumplir tus hábitos sea divertido.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-4">
+                    <div class="text-3xl">🌙</div>
+                    <div>
+                        <h3 class="text-white font-semibold text-lg mb-2">Modo Oscuro</h3>
+                        <p class="text-white/60 text-sm">Interfaz adaptable con tema claro y oscuro para usar la app cómodamente en cualquier momento.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CTA Section -->
+        <div class="glass-card rounded-3xl p-8 md:p-12 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
+                ¡Comienza Tu Transformación Hoy!
+            </h2>
+            <p class="text-lg text-white/70 mb-8 max-w-2xl mx-auto">
+                Únete a miles de usuarios que ya están construyendo mejores hábitos con DailyTick. 
+                Es gratis, fácil de usar y diseñado para ayudarte a tener éxito.
+            </p>
+            <a href="/auth" class="cta-button inline-block px-12 py-5 rounded-xl text-white font-semibold text-xl">
+                🎯 Crear Cuenta Gratis
             </a>
-            
-            <!-- Additional Info -->
-            <div class="mt-12 pt-8 border-t border-white/20">
+
+            <div class="mt-8 pt-8 border-t border-white/20">
                 <p class="text-white/50 text-sm">
-                    Totalmente gratuito • Sin límites de uso • Tu privacidad es nuestra prioridad
+                    ¿Ya tienes cuenta? <a href="/auth" class="text-green-300 hover:underline">Inicia sesión aquí</a>
                 </p>
             </div>
         </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-8 text-white/40 text-sm">
+            <p>© 2026 DailyTick. Todos los derechos reservados.</p>
+        </div>
     </div>
-    
-    <script>
-        // Redirect to app after 3 seconds if user doesn't click
-        setTimeout(() => {
-            window.location.href = '/auth';
-        }, 8000);
-    </script>
 </body>
 </html>

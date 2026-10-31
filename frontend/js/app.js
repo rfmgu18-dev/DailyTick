@@ -1,11 +1,17 @@
 const API_URL = '/api';
 let notificationsEnabled = true;
 
-console.log('Script cargado');
+console.log('🔄 Script cargado - VERSIÓN CON LOGS DE DEADLINE');
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM cargado');
-    checkAuth();
+
+    // Solo ejecutar checkAuth si estamos en /app o /auth, no en landing page
+    const currentPath = window.location.pathname;
+    if (currentPath === '/app' || currentPath === '/auth') {
+        checkAuth();
+    }
+
     setupEventListeners();
     loadNotificationPreference();
 });
@@ -46,6 +52,20 @@ function showApp(user) {
         applyTheme(user.theme);
     }
 
+    // Mostrar botón de admin si el usuario es admin
+    console.log('Verificando rol de admin:', user.isAdmin, user.role);
+    const adminNavLi = document.getElementById('adminNavLi');
+    if (adminNavLi) {
+        if (user.isAdmin) {
+            console.log('Mostrando botón de admin');
+            adminNavLi.classList.remove('hidden');
+        } else {
+            console.log('Ocultando botón de admin');
+            adminNavLi.classList.add('hidden');
+        }
+    }
+
+    loadSidebarPreference();
     loadTodayHabits();
     updateUserInfo(user);
 }
@@ -92,14 +112,20 @@ function setupEventListeners() {
     const navStats = document.getElementById('navStats');
     const navCalendar = document.getElementById('navCalendar');
     const navSettings = document.getElementById('navSettings');
+    const navAdmin = document.getElementById('navAdmin');
+    const navGoals = document.getElementById('navGoals');
     const logoutBtn = document.getElementById('logoutBtn');
+    const sidebarToggle = document.getElementById('sidebarToggle');
 
     if (navHome) navHome.addEventListener('click', () => showSection('home'));
     if (navHabits) navHabits.addEventListener('click', () => showSection('habits'));
     if (navStats) navStats.addEventListener('click', () => showSection('stats'));
     if (navCalendar) navCalendar.addEventListener('click', () => showSection('calendar'));
     if (navSettings) navSettings.addEventListener('click', () => showSection('settings'));
+    if (navAdmin) navAdmin.addEventListener('click', () => showSection('admin'));
+    if (navGoals) navGoals.addEventListener('click', () => showSection('goals'));
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+    if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
 
     // Mobile menu toggle
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
@@ -179,8 +205,56 @@ function setupEventListeners() {
         });
     }
 
+    // Goal section toggle
+    const hasGoalCheckbox = document.getElementById('hasGoal');
+    const goalSection = document.getElementById('goalSection');
+    if (hasGoalCheckbox && goalSection) {
+        hasGoalCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                goalSection.classList.remove('hidden');
+            } else {
+                goalSection.classList.add('hidden');
+            }
+        });
+    }
+
+    // Goal condition type toggle
+    const goalConditionType = document.getElementById('goalConditionType');
+    const timesConditionSection = document.getElementById('timesConditionSection');
+    const hoursConditionSection = document.getElementById('hoursConditionSection');
+    if (goalConditionType && timesConditionSection && hoursConditionSection) {
+        goalConditionType.addEventListener('change', (e) => {
+            if (e.target.value === 'times') {
+                timesConditionSection.classList.remove('hidden');
+                hoursConditionSection.classList.add('hidden');
+            } else {
+                timesConditionSection.classList.add('hidden');
+                hoursConditionSection.classList.remove('hidden');
+            }
+        });
+    }
+
+    // Botón para crear nueva meta (al editar)
+    const createNewGoalBtn = document.getElementById('createNewGoalBtn');
+    if (createNewGoalBtn) {
+        createNewGoalBtn.addEventListener('click', () => {
+            const habitForm = document.getElementById('habitForm');
+            delete habitForm.dataset.editingGoalId;
+            document.getElementById('goalModeLabel').textContent = 'Nueva Meta';
+            createNewGoalBtn.classList.add('hidden');
+            // Resetear campos de meta
+            document.getElementById('goalTitle').value = '';
+            document.getElementById('goalConditionType').value = 'times';
+            document.getElementById('timesConditionSection').classList.remove('hidden');
+            document.getElementById('hoursConditionSection').classList.add('hidden');
+            document.getElementById('goalTargetTimes').value = '1';
+            document.getElementById('goalPeriod').value = 'week';
+            document.getElementById('goalTotalHours').value = '1';
+        });
+    }
+
     document.querySelectorAll('.freq-checkbox').forEach(cb => {
-        cb.checked = true;
+        cb.checked = false; // No marcar días por defecto
         cb.addEventListener('change', function() {
             const parent = this.closest('.freq-day');
             if (this.checked) {
@@ -194,6 +268,29 @@ function setupEventListeners() {
             }
         });
         cb.dispatchEvent(new Event('change'));
+    });
+
+    // Notification bell
+    const notificationBtn = document.getElementById('notificationBtn');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+
+    if (notificationBtn) {
+        notificationBtn.addEventListener('click', () => {
+            notificationDropdown.classList.toggle('hidden');
+            loadNotifications();
+        });
+    }
+
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', markAllNotificationsAsRead);
+    }
+
+    // Close notification dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (notificationBtn && !notificationBtn.contains(e.target) && notificationDropdown && !notificationDropdown.contains(e.target)) {
+            if (notificationDropdown) notificationDropdown.classList.add('hidden');
+        }
     });
 }
 
@@ -228,12 +325,69 @@ async function handleLogin(e) {
         }
     } catch (error) {
         console.error('Error de conexión:', error);
-        showAlert('Error de conexión', 'error');
+    }
+}
+
+async function handleLoginEvent() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    console.log('Intentando login con:', email);
+
+    try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        console.log('Respuesta del servidor:', data);
+
+        if (response.ok) {
+            showAlert('Login exitoso', 'success');
+            showApp(data.user);
+            // Recargar datos actualizados del usuario
+            const meResponse = await fetch(`${API_URL}/auth/me`);
+            const meData = await meResponse.json();
+            if (meResponse.ok) {
+                updateUserInfo(meData.user);
+            }
+        } else {
+            showAlert(data.message || 'Error en login', 'error');
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
     }
 }
 
 async function handleRegister(e) {
     e.preventDefault();
+    const name = document.getElementById('registerName').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+
+    try {
+        const response = await fetch(`${API_URL}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showAlert('Registro exitoso', 'success');
+            showApp(data.user);
+        } else {
+            showAlert(data.message || 'Error en registro', 'error');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+async function handleRegisterEvent() {
     const name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
@@ -269,7 +423,7 @@ async function handleLogout() {
 }
 
 function showSection(section) {
-    ['home', 'habits', 'stats', 'calendar', 'settings'].forEach(s => {
+    ['home', 'habits', 'stats', 'calendar', 'settings', 'admin', 'goals'].forEach(s => {
         document.getElementById(`${s}Section`).classList.add('hidden');
     });
 
@@ -294,6 +448,8 @@ function showSection(section) {
         loadCalendar();
     }
     if (section === 'settings') loadSettings();
+    if (section === 'admin') loadAdminUsers();
+    if (section === 'goals') loadGoals();
 }
 
 async function loadTodayHabits() {
@@ -376,6 +532,15 @@ function renderHabits(habits) {
     habits.forEach(habit => {
         const card = document.createElement('div');
         card.className = `habit-card p-4 rounded-lg border-2 ${habit.completedToday ? 'completed' : ''}`;
+
+        // Formato de horario
+        let scheduleText = '';
+        if (habit.schedule && habit.schedule.time) {
+            scheduleText = habit.schedule.deadline
+                ? `🕐 ${habit.schedule.time} - ${habit.schedule.deadline}`
+                : `🕐 ${habit.schedule.time}`;
+        }
+
         card.innerHTML = `
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
@@ -386,7 +551,7 @@ function renderHabits(habits) {
                            data-emoji="${habit.emoji}">
                     <div>
                         <h3 class="font-bold text-gray-800">${habit.name}</h3>
-                        <p class="text-sm text-gray-600">${habit.category} • ${habit.duration.value} ${habit.duration.unit}</p>
+                        <p class="text-sm text-gray-600">${habit.category} • ${habit.duration.value} ${habit.duration.unit} ${scheduleText}</p>
                     </div>
                 </div>
             </div>
@@ -404,16 +569,32 @@ function renderAllHabits(habits) {
         return;
     }
 
-    habits.forEach(habit => {
+    // Ordenar hábitos por horario
+    const sortedHabits = [...habits].sort((a, b) => {
+        if (!a.schedule || !a.schedule.time) return 1;
+        if (!b.schedule || !b.schedule.time) return -1;
+        return a.schedule.time.localeCompare(b.schedule.time);
+    });
+
+    sortedHabits.forEach(habit => {
         const card = document.createElement('div');
         card.className = 'habit-card p-4 rounded-lg border-2';
+
+        // Formato de horario
+        let scheduleText = '';
+        if (habit.schedule && habit.schedule.time) {
+            scheduleText = habit.schedule.deadline
+                ? `🕐 ${habit.schedule.time} - ${habit.schedule.deadline}`
+                : `🕐 ${habit.schedule.time}`;
+        }
+
         card.innerHTML = `
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <span class="text-2xl">${habit.emoji}</span>
                     <div>
                         <h3 class="font-bold text-gray-800">${habit.name}</h3>
-                        <p class="text-sm text-gray-600">${habit.category} • ${habit.frequency.join(', ')}</p>
+                        <p class="text-sm text-gray-600">${habit.category} • ${habit.frequency.join(', ')} ${scheduleText}</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -441,6 +622,8 @@ async function toggleHabit(habitId, date) {
                 showAlert(`¡Logro desbloqueado: ${data.newAchievements[0].name}!`, 'success');
             }
             loadTodayHabits();
+            // Recargar metas para actualizar el progreso
+            loadGoals();
             // Recargar datos del usuario para actualizar sidebar
             const meResponse = await fetch(`${API_URL}/auth/me`);
             const meData = await meResponse.json();
@@ -451,6 +634,11 @@ async function toggleHabit(habitId, date) {
             const calendarSection = document.getElementById('calendarSection');
             if (!calendarSection.classList.contains('hidden')) {
                 loadCalendar();
+            }
+            // Verificar si el deadline es cercano y enviar notificación
+            const deadline = document.getElementById('habitDeadline').value;
+            if (deadline) {
+                checkAndSendDeadlineNotification(deadline, document.getElementById('habitName').value);
             }
         } else {
             showAlert(data.message || 'Error al actualizar hábito', 'error');
@@ -472,13 +660,27 @@ function hideHabitModal() {
     document.getElementById('habitModalTitle').textContent = 'Hábito Nuevo';
     const habitForm = document.getElementById('habitForm');
     delete habitForm.dataset.editingId;
+    delete habitForm.dataset.editingGoalId;
+    // Resetear sección de meta
+    document.getElementById('hasGoal').checked = false;
+    document.getElementById('goalSection').classList.add('hidden');
+    document.getElementById('goalModeLabel').textContent = 'Nueva Meta';
+    document.getElementById('createNewGoalBtn').classList.add('hidden');
+    // Desmarcar todos los días de frecuencia
+    document.querySelectorAll('.freq-checkbox').forEach(cb => {
+        cb.checked = false;
+        const parent = cb.closest('.freq-day');
+        parent.style.backgroundColor = '';
+    });
 }
 
 async function handleCreateHabit(e) {
     e.preventDefault();
+    console.log('🚀 handleCreateHabit iniciado');
 
     const habitForm = document.getElementById('habitForm');
     const editingId = habitForm.dataset.editingId;
+    console.log('🚀 editingId:', editingId);
 
     const name = document.getElementById('habitName').value;
     const emoji = document.getElementById('habitEmoji').value || '✓';
@@ -488,10 +690,50 @@ async function handleCreateHabit(e) {
         unit: document.getElementById('habitDurationUnit').value
     };
 
+    const schedule = {
+        time: document.getElementById('habitTime').value || null,
+        deadline: document.getElementById('habitDeadline').value || null
+    };
+
     const frequency = [];
     document.querySelectorAll('.freq-checkbox:checked').forEach(cb => {
         frequency.push(cb.value);
     });
+
+    // Manejo de metas
+    const hasGoal = document.getElementById('hasGoal').checked;
+    let goalData = null;
+
+    if (hasGoal) {
+        const goalTitle = document.getElementById('goalTitle').value;
+        const goalConditionType = document.getElementById('goalConditionType').value;
+
+        if (!goalTitle) {
+            showAlert('El título de la meta es requerido', 'error');
+            return;
+        }
+
+        if (goalConditionType === 'times') {
+            goalData = {
+                title: goalTitle,
+                conditionType: 'times',
+                timesCondition: {
+                    targetTimes: parseInt(document.getElementById('goalTargetTimes').value) || 1,
+                    period: document.getElementById('goalPeriod').value,
+                    currentCount: 0
+                }
+            };
+        } else if (goalConditionType === 'hours') {
+            goalData = {
+                title: goalTitle,
+                conditionType: 'hours',
+                hoursCondition: {
+                    totalHours: parseInt(document.getElementById('goalTotalHours').value) || 1,
+                    currentHours: 0
+                }
+            };
+        }
+    }
 
     try {
         let response;
@@ -499,25 +741,152 @@ async function handleCreateHabit(e) {
             response = await fetch(`${API_URL}/habits/${editingId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, emoji, category, duration, frequency })
+                body: JSON.stringify({ name, emoji, category, duration, frequency, schedule })
             });
         } else {
             response = await fetch(`${API_URL}/habits`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, emoji, category, duration, frequency })
+                body: JSON.stringify({ name, emoji, category, duration, frequency, schedule })
             });
         }
 
         const data = await response.json();
 
         if (response.ok) {
-            showAlert(editingId ? 'Hábito actualizado exitosamente' : 'Hábito creado exitosamente', 'success');
+            console.log('Hábito creado/actualizado:', data);
+
+            // Si hay meta, crearla después de crear el hábito
+            if (hasGoal && goalData && !editingId) {
+                console.log('Intentando crear meta con datos:', goalData);
+                console.log('Habit ID:', data.habit._id);
+
+                if (!data.habit || !data.habit._id) {
+                    console.error('Error: data.habit._id no existe:', data);
+                    showAlert('Error: ID de hábito no disponible', 'error');
+                    return;
+                }
+
+                try {
+                    const goalResponse = await fetch(`${API_URL}/goals`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            habitId: data.habit._id,
+                            ...goalData
+                        })
+                    });
+
+                    console.log('Respuesta de creación de meta - Status:', goalResponse.status);
+                    const goalDataResponse = await goalResponse.json();
+                    console.log('Respuesta de creación de meta - Data:', goalDataResponse);
+
+                    if (goalResponse.ok) {
+                        showAlert('Hábito y meta creados exitosamente', 'success');
+                        console.log('Cargando metas...');
+                        loadGoals(); // Cargar metas actualizadas
+                    } else {
+                        console.error('Error al crear meta:', goalDataResponse);
+                        showAlert('Hábito creado, pero error al crear meta: ' + (goalDataResponse.message || 'Error desconocido'), 'warning');
+                    }
+                } catch (goalError) {
+                    console.error('Excepción al crear meta:', goalError);
+                    showAlert('Hábito creado, pero error al crear meta: ' + goalError.message, 'warning');
+                }
+            } else if (hasGoal && goalData && editingId) {
+                // Actualizar meta existente
+                const editingGoalId = habitForm.dataset.editingGoalId;
+                console.log('Actualizando meta existente:', editingGoalId);
+
+                if (editingGoalId) {
+                    try {
+                        const goalUpdateResponse = await fetch(`${API_URL}/goals/${editingGoalId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(goalData)
+                        });
+
+                        const goalUpdateData = await goalUpdateResponse.json();
+                        console.log('Respuesta de actualización de meta:', goalUpdateData);
+
+                        if (goalUpdateResponse.ok) {
+                            showAlert('Hábito y meta actualizados exitosamente', 'success');
+                            loadGoals();
+                        } else {
+                            showAlert('Hábito actualizado, pero error al actualizar meta: ' + (goalUpdateData.message || 'Error desconocido'), 'warning');
+                        }
+                    } catch (goalError) {
+                        console.error('Excepción al actualizar meta:', goalError);
+                        showAlert('Hábito actualizado, pero error al actualizar meta: ' + goalError.message, 'warning');
+                    }
+                } else {
+                    // No había meta, crear una nueva
+                    try {
+                        const goalResponse = await fetch(`${API_URL}/goals`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                habitId: editingId,
+                                ...goalData
+                            })
+                        });
+
+                        const goalDataResponse = await goalResponse.json();
+                        console.log('Respuesta de creación de meta en edición:', goalDataResponse);
+
+                        if (goalResponse.ok) {
+                            showAlert('Hábito actualizado y meta creada exitosamente', 'success');
+                            loadGoals();
+                        } else {
+                            showAlert('Hábito actualizado, pero error al crear meta: ' + (goalDataResponse.message || 'Error desconocido'), 'warning');
+                        }
+                    } catch (goalError) {
+                        console.error('Excepción al crear meta en edición:', goalError);
+                        showAlert('Hábito actualizado, pero error al crear meta: ' + goalError.message, 'warning');
+                    }
+                }
+            } else if (!hasGoal && editingId && habitForm.dataset.editingGoalId) {
+                // Se desmarcó el checkbox de meta, eliminar la meta existente
+                const editingGoalId = habitForm.dataset.editingGoalId;
+                console.log('Eliminando meta:', editingGoalId);
+
+                try {
+                    const goalDeleteResponse = await fetch(`${API_URL}/goals/${editingGoalId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (goalDeleteResponse.ok) {
+                        showAlert('Hábito actualizado y meta eliminada', 'success');
+                        loadGoals();
+                    } else {
+                        showAlert('Hábito actualizado, pero error al eliminar meta', 'warning');
+                    }
+                } catch (goalError) {
+                    console.error('Excepción al eliminar meta:', goalError);
+                    showAlert('Hábito actualizado, pero error al eliminar meta', 'warning');
+                }
+            } else {
+                showAlert(editingId ? 'Hábito actualizado exitosamente' : 'Hábito creado exitosamente', 'success');
+            }
+
+            // Verificar deadline y enviar notificación SIEMPRE que haya deadline (movido fuera del else)
+            const deadline = document.getElementById('habitDeadline').value;
+            console.log('🔍 Deadline del input:', deadline, 'Nombre del hábito:', name);
+            
+            if (deadline && deadline.trim() !== '') {
+                console.log('🔍 Deadline tiene valor, enviando notificación');
+                checkAndSendDeadlineNotification(deadline, name);
+            } else {
+                console.log('❌ Deadline está vacío');
+            }
+
             hideHabitModal();
             delete habitForm.dataset.editingId;
+            delete habitForm.dataset.editingGoalId;
             loadTodayHabits();
             loadAllHabits();
         } else {
+            console.error('Error al guardar hábito:', data);
             showAlert(data.message || 'Error al guardar hábito', 'error');
         }
     } catch (error) {
@@ -561,6 +930,12 @@ async function editHabit(habitId) {
                 document.getElementById('habitDuration').value = habit.duration.value;
                 document.getElementById('habitDurationUnit').value = habit.duration.unit;
 
+                // Cargar horarios si existen
+                if (habit.schedule) {
+                    document.getElementById('habitTime').value = habit.schedule.time || '';
+                    document.getElementById('habitDeadline').value = habit.schedule.deadline || '';
+                }
+
                 document.querySelectorAll('.freq-checkbox').forEach(cb => {
                     cb.checked = true; // Marcar todos los días por defecto al editar
                     cb.dispatchEvent(new Event('change'));
@@ -568,9 +943,55 @@ async function editHabit(habitId) {
 
                 const habitForm = document.getElementById('habitForm');
                 habitForm.dataset.editingId = habitId;
+
+                // Cargar meta asociada si existe
+                console.log('Cargando meta para hábito:', habitId);
+                const goalsResponse = await fetch(`${API_URL}/goals/habit/${habitId}`);
+                const goalsData = await goalsResponse.json();
+
+                if (goalsResponse.ok && goalsData.goals && goalsData.goals.length > 0) {
+                    console.log('Meta encontrada:', goalsData.goals[0]);
+                    const goal = goalsData.goals[0];
+
+                    // Marcar checkbox de meta
+                    document.getElementById('hasGoal').checked = true;
+                    document.getElementById('goalSection').classList.remove('hidden');
+
+                    // Guardar ID de la meta para editar
+                    habitForm.dataset.editingGoalId = goal._id;
+
+                    // Mostrar label de edición y botón de crear nueva
+                    document.getElementById('goalModeLabel').textContent = 'Editando Meta Existente';
+                    document.getElementById('createNewGoalBtn').classList.remove('hidden');
+
+                    // Llenar campos de la meta
+                    document.getElementById('goalTitle').value = goal.title;
+                    document.getElementById('goalConditionType').value = goal.conditionType;
+
+                    // Mostrar sección según tipo de condición
+                    if (goal.conditionType === 'times') {
+                        document.getElementById('timesConditionSection').classList.remove('hidden');
+                        document.getElementById('hoursConditionSection').classList.add('hidden');
+                        document.getElementById('goalTargetTimes').value = goal.timesCondition.targetTimes;
+                        document.getElementById('goalPeriod').value = goal.timesCondition.period;
+                    } else if (goal.conditionType === 'hours') {
+                        document.getElementById('timesConditionSection').classList.add('hidden');
+                        document.getElementById('hoursConditionSection').classList.remove('hidden');
+                        document.getElementById('goalTotalHours').value = goal.hoursCondition.totalHours;
+                    }
+                } else {
+                    console.log('No hay meta asociada al hábito');
+                    // Limpiar campos de meta
+                    document.getElementById('hasGoal').checked = false;
+                    document.getElementById('goalSection').classList.add('hidden');
+                    delete habitForm.dataset.editingGoalId;
+                    document.getElementById('goalModeLabel').textContent = 'Nueva Meta';
+                    document.getElementById('createNewGoalBtn').classList.add('hidden');
+                }
             }
         }
     } catch (error) {
+        console.error('Error al cargar hábito:', error);
         showAlert('Error al cargar hábito', 'error');
     }
 }
@@ -586,6 +1007,8 @@ async function loadStats() {
             // Actualizar racha en sidebar
             const userStreak = document.getElementById('userStreak');
             if (userStreak) userStreak.textContent = data.currentStreak || 0;
+            // Cargar estadísticas de metas
+            loadGoalsStats();
         }
     } catch (error) {
         console.error('Error al cargar estadísticas:', error);
@@ -889,7 +1312,7 @@ function showEmojiPicker() {
 
     const emojiGrid = document.getElementById('emojiGrid');
     if (emojiGrid.children.length === 0) {
-        const emojis = ['🎯', '💧', '🏃', '📚', '💪', '🧘', '🌅', '🦉', '🥗', '💤', '📝', '🎨', '🎵', '🎬', '💻', '📱', '🎮', '⚽', '🛏️', '🏠', '💰', '💼', '📅', '🌱', '🚴', '📖', '✈️', '🍎', '🍔', '🍕', '☕', '🥤', '🍣', '🥘', '🌮', '🍭', '🍬', '🍦', '🍏', '🍋', '🍊', '🍍', '🥝', '🥜', '🥔', '🥕', '🥦', '🥬', '🥒', '🍈', '🍆', '🌽', '🍒', '🥑', '🍠', '🍄', '🌶', '🍉', '🍐', '🍇', '🍌', '🍑', '🍓', '💝', '🎁', '🎈', '🎉', '🎊', '🎓', '🎩', '🏆', '🏅', '🥇', '🥈', '🥉', '⚡', '💎', '⭐', '🌟', '✨', '🌈', '🔥', '💡', '🔦', '📌', '📍', '🔖', '🏷️', '🔑', '🔒', '🔓', '🔔', '🔕', '📢', '📣', '🔊', '🔉', '🔈', '🔇', '🎵', '🎶', '🎙️', '🎚️', '🎛️', '🎤', '🎧', '📻', '🎷', '🎸', '🎹', '🎺', '🎻', '🪕', '🥁', '📱', '📲', '☎️', '📞', '📟', '📠', '🔋', '🔌', '💻', '🖥️', '🖨️', '⌨️', '🖱️', '🖲️', '💽', '💾', '💿', '📀', '🧮', '🎥', '🎞️', '📽️', '🎬', '📺', '📷', '📸', '📹', '📼', '🔍', '🔎', '🕯️', '💡', '🔦', '🏮', '📔', '📕', '📖', '📗', '📘', '📙', '📚', '📓', '📒', '📃', '📜', '📄', '📰', '🗞️', '📑', '🔖', '🏷️', '💰', '💴', '💵', '💶', '💷', '💸', '💳', '🧾', '💹', '💱', '💲', '✉️', '📧', '📨', '📩', '📤', '📥', '📦', '📫', '📪', '📬', '📭', '📮', '🗳️', '✏️', '✒️', '🖋️', '🖊️', '🖌️', '🖍️', '📝', '💼', '📁', '📂', '🗂️', '📅', '📆', '🗒️', '🗓️', '📇', '📈', '📉', '📊', '📋', '📌', '📍', '📎', '🖇️', '📏', '📐', '✂️', '🗃️', '🗄️', '🗑️', '🔒', '🔓', '🔏', '🔐', '🔑', '🗝️', '🔨', '🪓', '⛏️', '🔧', '🔩', '⚙️', '🗜️', '⚖️', '🦯', '🔗', '⛓️', '🧰', '🧲', '⚗️', '🧪', '🧫', '🧬', '🔬', '🔭', '📡', '💉', '🩸', '💊', '🩹', '🩺', '🚪', '🛗', '🪞', '🪟', '🛏️', '🛋️', '🪑', '🚽', '🪠', '🚿', '🛁', '🪤', '🪒', '🧴', '🧷', '🧹', '🧺', '🧻', '🪣', '🧼', '🪥', '🧽', '🧯', '🛒', '🚬', '⚰️', '⚱️', '🗿', '🏧', '🚮', '🚰', '♿', '🚹', '🚺', '🚻', '🚼', '🚾', '🛂', '🛃', '🛄', '🚸', '⚠️', '🚸', '🚭', '🚯', '🚱', '🚷', '📵', '🔞', '☢️', '☣️', '⬆️', '↗️', '➡️', '↘️', '⬇️', '↙️', '⬅️', '↖️', '↕️', '↔️', '↩️', '↪️', '⤴️', '⤵️', '🔃', '🔄', '🔙', '🔚', '🔛', '🔜', '🔝', '🛐', '⚛️', '🕉️', '✡️', '☸️', '☯️', '✝️', '☦️', '☪️', '☮️', '🕎', '🔯', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '⛎', '🔀', '🔁', '🔂', '▶️', '⏩', '⏭️', '⏯️', '◀️', '⏪', '⏮️', '🔼', '⏫', '🔽', '⏬', '⏸️', '⏹️', '⏺️', '⏏️', '🎦', '🔅', '🔆', '📶', '📳', '📴', '♀️', '♂️', '⚕️', '♾️', '♻️', '⚜️', '🔱', '📛', '🔰', '⭕', '✅', '☑️', '✔️', '✖️', '❌', '❎', '➕', '➖', '➗', '➰', '➿', '〽️', '✳️', '✴️', '❇️', '‼️', '⁉️', '❓', '❔', '❕', '❗', '〰️', '©️', '®️', '™️', '#️⃣', '*️⃣', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '🔠', '🔡', '🔢', '🔣', '🔤', '🅰️', '🆎', '🅱️', '🆑', '🆒', '🆓', 'ℹ️', '🆔', 'Ⓜ️', '🆕', '🆖', '🅾️', '🆗', '🅿️', '🆘', '🆙', '🆚', '🈁', '🈂️', '🈷️', '🈶', '🈯', '🉐', '🈹', '🈚', '🈲', '🉑', '🈸', '🈴', '🈳', '㊗️', '㊙️', '🈺', '🈵', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '🟤', '⚫', '⚪', '🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '🟫', '⬛', '⬜', '◼️', '◻️', '◾', '◽', '▪️', '▫️', '🔶', '🔷', '🔸', '🔹', '🔺', '▪️', '🔻', '💠', '🔘', '🔳', '🔲', '🏁', '🚩', '🎌', '🏴', '🏳️', '🏳️‍🌈', '🏳️‍⚧️', '🏴‍☠️'];
+        const emojis = ['🎯', '💧', '🏃', '📚', '💪', '🧘', '🌅', '🦉', '🥗', '💤', '📝', '🎨', '🎵', '💻', '📱', '🎮', '⚽', '🛏️', '🏠', '💰', '💼', '📅', '🌱', '🚴', '📖', '✈️', '🍎', '☕', '🥤', '🍣', '🌮', '🍦', '🍏', '🍋', '🍊', '🍍', '🥝', '🥜', '🥕', '🥦', '🥒', '🍒', '🥑', '🍄', '🌶', '🍉', '🍐', '🍇', '🍌', '🍑', '🍓', '💝', '🎁', '🎈', '🎉', '🎊', '🎓', '🏆', '🏅', '🥇', '🥈', '🥉', '⚡', '💎', '⭐', '🌟', '✨', '🌈', '🔥', '💡', '📌', '📍', '🔖', '🏷️', '🔑', '🔒', '🔓', '🔔', '📢', '📣', '🔊', '🎵', '🎶', '🎤', '🎧', '🎷', '🎸', '🎹', '🎺', '🎻', '🥁', '☎️', '🔋', '🔌', '⌨️', '🖱️', '💾', '💿', '🎥', '📺', '📷', '📸', '📹', '🔍', '🔎', '📔', '📕', '📖', '📗', '📘', '📙', '📚', '📓', '📒', '📃', '📜', '📄', '📰', '📑', '💰', '💵', '💸', '💳', '🧾', '💹', '💲', '✉️', '📧', '📨', '📩', '📤', '📥', '📦', '📫', '📪', '📬', '📭', '📮', '✏️', '🖊️', '🖌️', '📝', '💼', '📁', '📂', '🗂️', '📅', '📆', '🗒️', '🗓️', '📇', '📈', '📉', '📊', '📋', '📌', '📍', '📎', '🖇️', '📏', '📐', '✂️', '🗃️', '🗄️', '🗑️', '🔒', '🔓', '🔏', '🔐', '🔑', '🗝️', '🔨', '⛏️', '🔧', '🔩', '⚙️', '🗜️', '⚖️', '🦯', '🔗'];
 
         emojis.forEach(emoji => {
             const emojiBtn = document.createElement('button');
@@ -1072,9 +1495,76 @@ function navigateCalendar(direction) {
     loadCalendar();
 }
 
-function showAlert(message, type) {
-    if (!notificationsEnabled) return;
+async function checkAndSendDeadlineNotification(deadline, habitName) {
+    try {
+        console.log('🔍 Verificando deadline:', deadline, 'para hábito:', habitName);
+        
+        const now = new Date();
+        const [hours, minutes] = deadline.split(':').map(Number);
 
+        const deadlineDate = new Date();
+        deadlineDate.setHours(hours, minutes, 0, 0);
+
+        // Calcular diferencia en minutos
+        let diffMs = deadlineDate - now;
+        let diffMinutes = Math.floor(diffMs / 60000);
+
+        console.log('📅 Ahora:', now.toLocaleTimeString(), 'Deadline:', deadlineDate.toLocaleTimeString(), 'Diferencia:', diffMinutes, 'min');
+
+        // Si el deadline ya pasó hoy, asumir que es mañana
+        if (diffMs < 0) {
+            deadlineDate.setDate(deadlineDate.getDate() + 1);
+            diffMs = deadlineDate - now;
+            diffMinutes = Math.floor(diffMs / 60000);
+            console.log('📅 Deadline es mañana, nueva diferencia:', diffMinutes, 'min');
+        }
+
+        // Si faltan menos de 30 minutos (en las próximas 24 horas), enviar notificación inmediata
+        if (diffMinutes > 0 && diffMinutes <= 30) {
+            const message = diffMinutes <= 15
+                ? `⚠️ Faltan ${diffMinutes} minutos para que "${habitName}" se complete. ¡Última oportunidad!`
+                : `⏰ Faltan ${diffMinutes} minutos para que "${habitName}" se complete. ¡Apúrate!`;
+
+            console.log('📢 Enviando notificación urgente:', message);
+            const response = await fetch(`${API_URL}/notifications`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, type: 'warning' })
+            });
+
+            if (response.ok) {
+                loadNotifications();
+                showAlert('Notificación de deadline enviada', 'success');
+            }
+        } else if (diffMinutes > 30 && diffMinutes <= 1440) {
+            // Si faltan entre 30 min y 24 horas, enviar notificación informativa
+            const hours = Math.floor(diffMinutes / 60);
+            const mins = diffMinutes % 60;
+            const timeText = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
+
+            const message = `⏰ Faltan ${timeText} para que "${habitName}" se complete.`;
+
+            console.log('📢 Enviando notificación informativa:', message);
+            const response = await fetch(`${API_URL}/notifications`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, type: 'info' })
+            });
+
+            if (response.ok) {
+                loadNotifications();
+                showAlert('Notificación de deadline enviada', 'success');
+            }
+        } else {
+            console.log('❌ No se envió notificación: tiempo restante fuera de rango');
+        }
+    } catch (error) {
+        console.error('Error al verificar deadline:', error);
+    }
+}
+
+function showAlert(message, type) {
+    // Las alertas siempre se muestran, independientemente de notificationsEnabled
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50`;
     alertDiv.textContent = message;
@@ -1099,3 +1589,598 @@ function saveNotificationPreference(enabled) {
     notificationsEnabled = enabled;
     localStorage.setItem('notificationsEnabled', enabled.toString());
 }
+
+// ===== SIDEBAR TOGGLE =====
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const main = document.querySelector('main');
+    const toggleBtn = document.getElementById('sidebarToggle');
+
+    sidebar.classList.toggle('sidebar-collapsed');
+    main.classList.toggle('sidebar-collapsed');
+
+    const isCollapsed = sidebar.classList.contains('sidebar-collapsed');
+    toggleBtn.textContent = isCollapsed ? '▶' : '◀';
+
+    localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
+}
+
+function loadSidebarPreference() {
+    const sidebar = document.getElementById('sidebar');
+    const main = document.querySelector('main');
+    const toggleBtn = document.getElementById('sidebarToggle');
+
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+    if (isCollapsed) {
+        sidebar.classList.add('sidebar-collapsed');
+        main.classList.add('sidebar-collapsed');
+        if (toggleBtn) toggleBtn.textContent = '▶';
+    }
+}
+
+// ===== GOALS FUNCTIONS =====
+
+function calculateCyclesCompleted(goal) {
+    if (goal.conditionType === 'hours') {
+        return null; // No aplica para horas
+    }
+
+    const createdAt = new Date(goal.createdAt);
+    const now = new Date();
+    const period = goal.timesCondition.period;
+
+    const diffTime = now - createdAt;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (period === 'day') {
+        return { completed: diffDays, period: 'días' };
+    } else if (period === 'week') {
+        const weeks = Math.floor(diffDays / 7);
+        return { completed: weeks, period: 'semanas' };
+    } else if (period === 'month') {
+        const months = Math.floor(diffDays / 30);
+        return { completed: months, period: 'meses' };
+    }
+
+    return { completed: 0, period: period };
+}
+
+async function loadGoals() {
+    console.log('Cargando metas...');
+    try {
+        const response = await fetch(`${API_URL}/goals`);
+        const data = await response.json();
+
+        console.log('Respuesta de loadGoals - Status:', response.status);
+        console.log('Respuesta de loadGoals - Data:', data);
+
+        if (response.ok) {
+            console.log('Metas cargadas:', data.goals);
+            renderGoals(data.goals);
+            loadGoalsStats();
+        } else {
+            console.error('Error al cargar metas:', data);
+            showAlert(data.message || 'Error al cargar metas', 'error');
+        }
+    } catch (error) {
+        console.error('Excepción en loadGoals:', error);
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+// ===== NOTIFICATIONS FUNCTIONS =====
+
+async function loadNotifications() {
+    try {
+        const response = await fetch(`${API_URL}/notifications`);
+        const data = await response.json();
+
+        if (response.ok) {
+            renderNotifications(data.notifications);
+            updateNotificationBadge(data.notifications);
+        }
+    } catch (error) {
+        console.error('Error al cargar notificaciones:', error);
+    }
+}
+
+function renderNotifications(notifications) {
+    const container = document.getElementById('notificationList');
+    container.innerHTML = '';
+
+    if (notifications.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-4">No tienes notificaciones</p>';
+        return;
+    }
+
+    notifications.forEach(notification => {
+        const div = document.createElement('div');
+        div.className = `p-3 border-b hover:bg-gray-50 ${notification.read ? 'bg-gray-50' : 'bg-white'}`;
+
+        const createdAt = new Date(notification.createdAt).toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        div.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-800 ${notification.read ? '' : 'font-semibold'}">${notification.message}</p>
+                    <p class="text-xs text-gray-500 mt-1">${createdAt}</p>
+                </div>
+                <button onclick="deleteNotification('${notification._id}')" class="text-red-500 hover:text-red-700 text-xs ml-2">🗑️</button>
+            </div>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+function updateNotificationBadge(notifications) {
+    const badge = document.getElementById('notificationBadge');
+    const unreadCount = notifications.filter(n => !n.read).length;
+
+    if (unreadCount > 0) {
+        badge.textContent = unreadCount;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+async function markAllNotificationsAsRead() {
+    try {
+        const response = await fetch(`${API_URL}/notifications/read-all`, {
+            method: 'PUT'
+        });
+
+        if (response.ok) {
+            loadNotifications();
+            showAlert('Todas las notificaciones marcadas como leídas', 'success');
+        } else {
+            showAlert('Error al marcar notificaciones', 'error');
+        }
+    } catch (error) {
+        console.error('Error al marcar notificaciones como leídas:', error);
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+async function deleteNotification(notificationId) {
+    try {
+        const response = await fetch(`${API_URL}/notifications/${notificationId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            loadNotifications();
+            showAlert('Notificación eliminada', 'success');
+        } else {
+            showAlert('Error al eliminar notificación', 'error');
+        }
+    } catch (error) {
+        console.error('Error al eliminar notificación:', error);
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+async function loadGoalsStats() {
+    try {
+        const response = await fetch(`${API_URL}/goals/stats/all`);
+        const data = await response.json();
+
+        if (response.ok) {
+            const stats = data.stats;
+            // Sección de metas
+            document.getElementById('totalGoals').textContent = stats.total;
+            document.getElementById('activeGoals').textContent = stats.active;
+            document.getElementById('completedGoals').textContent = stats.completed;
+            document.getElementById('goalsSuccessRate').textContent = stats.successRate + '%';
+            // Sección de estadísticas
+            document.getElementById('statsTotalGoals').textContent = stats.total;
+            document.getElementById('statsActiveGoals').textContent = stats.active;
+            document.getElementById('statsCompletedGoals').textContent = stats.completed;
+            document.getElementById('statsGoalsSuccessRate').textContent = stats.successRate + '%';
+        }
+    } catch (error) {
+        console.error('Error al cargar estadísticas de metas:', error);
+    }
+}
+
+function renderGoals(goals) {
+    console.log('=== RENDERIZANDO METAS ===');
+    console.log('Metas recibidas:', goals);
+    console.log('Número de metas:', goals.length);
+
+    const container = document.getElementById('goalsList');
+    console.log('Contenedor goalsList:', container);
+
+    if (!container) {
+        console.error('Error: Contenedor goalsList no encontrado');
+        return;
+    }
+
+    container.innerHTML = '';
+
+    if (goals.length === 0) {
+        console.log('No hay metas, mostrando mensaje vacío');
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">No tienes metas asignadas. Crea un hábito con una meta para comenzar.</p>';
+        return;
+    }
+
+    // Agrupar metas por hábito
+    const goalsByHabit = {};
+    goals.forEach(goal => {
+        console.log('Procesando meta:', goal);
+        const habitName = goal.habit.name;
+        if (!goalsByHabit[habitName]) {
+            goalsByHabit[habitName] = [];
+        }
+        goalsByHabit[habitName].push(goal);
+    });
+
+    console.log('Metas agrupadas por hábito:', goalsByHabit);
+
+    // Renderizar cada grupo
+    Object.keys(goalsByHabit).forEach(habitName => {
+        console.log('Renderizando grupo para hábito:', habitName);
+        const habitGoals = goalsByHabit[habitName];
+        const habitEmoji = habitGoals[0].habit.emoji;
+
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'border rounded-lg p-4 mb-4';
+
+        groupDiv.innerHTML = `
+            <div class="flex items-center space-x-3 mb-3">
+                <span class="text-2xl">${habitEmoji}</span>
+                <h3 class="font-bold text-gray-800">${habitName}</h3>
+            </div>
+        `;
+
+        habitGoals.forEach(goal => {
+            const goalCard = document.createElement('div');
+            goalCard.className = 'ml-8 p-3 bg-gray-50 rounded-lg mb-2';
+
+            // Formato de condición
+            let conditionText = '';
+            if (goal.conditionType === 'times') {
+                const periodMap = {
+                    'day': 'al día',
+                    'week': 'a la semana',
+                    'month': 'al mes'
+                };
+                const periodText = periodMap[goal.timesCondition.period] || goal.timesCondition.period;
+                conditionText = `${goal.timesCondition.currentCount}/${goal.timesCondition.targetTimes} veces ${periodText}`;
+            } else if (goal.conditionType === 'hours') {
+                conditionText = `${goal.hoursCondition.currentHours}/${goal.hoursCondition.totalHours} horas`;
+            }
+
+            // Calcular ciclos completados
+            const cycles = calculateCyclesCompleted(goal);
+            let cyclesText = '';
+            if (cycles) {
+                cyclesText = `<p class="text-xs text-gray-500 mt-1">📅 ${cycles.completed} ${cycles.period} completados</p>`;
+            }
+
+            // Color de estado
+            let statusColor = 'bg-gray-100 text-gray-700';
+            if (goal.status === 'completed') statusColor = 'bg-green-100 text-green-700';
+            if (goal.status === 'active') statusColor = 'bg-blue-100 text-blue-700';
+            if (goal.status === 'failed') statusColor = 'bg-red-100 text-red-700';
+
+            goalCard.innerHTML = `
+                <div class="flex items-center justify-between" id="goal-content-${goal._id}">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-800">${goal.title}</h4>
+                        <p class="text-sm text-gray-600">${conditionText}</p>
+                        ${cyclesText}
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            <div class="bg-purple-500 h-2 rounded-full" style="width: ${goal.progress}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">${goal.progress}% completado</p>
+                    </div>
+                    <div class="flex items-center space-x-2 ml-4">
+                        <span class="px-2 py-1 rounded text-xs font-medium ${statusColor}">
+                            ${goal.status === 'active' ? 'Activa' : goal.status === 'completed' ? 'Completada' : goal.status}
+                        </span>
+                        <button onclick="toggleGoalEdit('${goal._id}')" class="text-blue-500 hover:text-blue-700 text-sm">✏️</button>
+                        <button onclick="deleteGoal('${goal._id}')" class="text-red-500 hover:text-red-700 text-sm">🗑️</button>
+                    </div>
+                </div>
+                <div class="hidden mt-3 pt-3 border-t border-gray-200" id="goal-edit-${goal._id}">
+                    <div class="space-y-2">
+                        <div>
+                            <label class="text-xs text-gray-500">Título</label>
+                            <input type="text" id="edit-goal-title-${goal._id}" value="${goal.title}"
+                                class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Frecuencia</label>
+                            <select id="edit-goal-period-${goal._id}"
+                                class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                <option value="day" ${goal.timesCondition.period === 'day' ? 'selected' : ''}>Al día</option>
+                                <option value="week" ${goal.timesCondition.period === 'week' ? 'selected' : ''}>A la semana</option>
+                                <option value="month" ${goal.timesCondition.period === 'month' ? 'selected' : ''}>Al mes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Veces objetivo</label>
+                            <input type="number" id="edit-goal-target-${goal._id}" value="${goal.timesCondition.targetTimes}"
+                                class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                        </div>
+                        <div class="flex space-x-2 mt-2">
+                            <button onclick="saveGoalEdit('${goal._id}')" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Guardar</button>
+                            <button onclick="toggleGoalEdit('${goal._id}')" class="bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-400">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            groupDiv.appendChild(goalCard);
+        });
+
+        container.appendChild(groupDiv);
+    });
+}
+
+// ===== GOAL EDIT/DELETE FUNCTIONS =====
+
+async function editGoal(goalId) {
+    // Esta función ya no se usa, se reemplaza por toggleGoalEdit
+    toggleGoalEdit(goalId);
+}
+
+function toggleGoalEdit(goalId) {
+    const contentDiv = document.getElementById(`goal-content-${goalId}`);
+    const editDiv = document.getElementById(`goal-edit-${goalId}`);
+
+    if (contentDiv && editDiv) {
+        contentDiv.classList.toggle('hidden');
+        editDiv.classList.toggle('hidden');
+    }
+}
+
+async function saveGoalEdit(goalId) {
+    try {
+        const title = document.getElementById(`edit-goal-title-${goalId}`).value;
+        const period = document.getElementById(`edit-goal-period-${goalId}`).value;
+        const targetTimes = parseInt(document.getElementById(`edit-goal-target-${goalId}`).value);
+
+        const response = await fetch(`${API_URL}/goals/${goalId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title,
+                timesCondition: {
+                    period,
+                    targetTimes
+                }
+            })
+        });
+
+        if (response.ok) {
+            showAlert('Meta actualizada', 'success');
+            loadGoals();
+        } else {
+            showAlert('Error al actualizar meta', 'error');
+        }
+    } catch (error) {
+        console.error('Error al guardar meta:', error);
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+async function deleteGoal(goalId) {
+    if (!confirm('¿Estás seguro de eliminar esta meta?')) return;
+
+    try {
+        const response = await fetch(`${API_URL}/goals/${goalId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            showAlert('Meta eliminada', 'success');
+            loadGoals();
+        } else {
+            showAlert('Error al eliminar meta', 'error');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+// ===== ADMIN FUNCTIONS =====
+
+async function loadAdminUsers() {
+    try {
+        const response = await fetch(`${API_URL}/admin/users`);
+        const data = await response.json();
+
+        if (response.ok) {
+            renderAdminUsers(data.users);
+        } else {
+            showAlert(data.message || 'Error al cargar usuarios', 'error');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+function renderAdminUsers(users) {
+    const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = '';
+
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.className = 'border-b hover:bg-gray-200';
+        row.innerHTML = `
+            <td class="py-3 px-4 text-white font-medium">${user.name}</td>
+            <td class="py-3 px-4 text-gray-800">${user.email}</td>
+            <td class="py-3 px-4 text-gray-500 font-semibold">${user.streak} 🔥</td>
+            <td class="py-3 px-4 text-gray-500 font-semibold">${user.level} ⭐</td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-1 rounded text-xs font-medium ${user.isAdmin ? 'bg-purple-600 text-white' : 'bg-gray-600 text-white'}">
+                    ${user.isAdmin ? 'Admin' : 'Usuario'}
+                </span>
+            </td>
+            <td class="py-3 px-4">
+                <div class="flex space-x-2">
+                    <button onclick="showAdminActionModal('${user._id}', 'resetPassword')" class="text-blue-400 hover:text-blue-300 text-sm font-medium">Reset Password</button>
+                    <button onclick="showAdminActionModal('${user._id}', 'changeEmail')" class="text-green-700 hover:text-green-900 text-sm font-medium">Cambiar Email</button>
+                    <button onclick="showAdminActionModal('${user._id}', 'delete')" class="text-red-700 hover:text-red-900 text-sm font-medium">Eliminar</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+let currentAdminAction = null;
+let currentAdminUserId = null;
+
+async function showAdminActionModal(userId, action) {
+    currentAdminUserId = userId;
+    currentAdminAction = action;
+
+    const modal = document.getElementById('adminModal');
+    const title = document.getElementById('adminModalTitle');
+    const content = document.getElementById('adminModalContent');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    // Obtener datos del usuario
+    const usersResponse = await fetch(`${API_URL}/admin/users`);
+    const usersData = await usersResponse.json();
+    const user = usersData.users.find(u => u._id === userId);
+
+    if (action === 'resetPassword') {
+        title.textContent = 'Resetear Contraseña';
+        content.innerHTML = `
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-500 mb-1">Usuario</label>
+                <p class="text-gray-800 font-medium">${user ? user.name : 'N/A'}</p>
+                <p class="text-gray-600 text-sm">${user ? user.email : 'N/A'}</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nueva Contraseña</label>
+                <div class="relative">
+                    <input type="password" id="adminNewPassword" required minlength="6"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                        placeholder="Nueva contraseña (mínimo 6 caracteres)">
+                    <button type="button" onclick="togglePasswordVisibility('adminNewPassword')" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 text-lg">
+                        👁️
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (action === 'changeEmail') {
+        title.textContent = 'Cambiar Email';
+        content.innerHTML = `
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-500 mb-1">Email Actual</label>
+                <p class="text-gray-800 font-medium">${user ? user.email : 'N/A'}</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nuevo Email</label>
+                <input type="email" id="adminNewEmail" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="nuevo@email.com">
+            </div>
+        `;
+    } else if (action === 'delete') {
+        title.textContent = 'Eliminar Usuario';
+        content.innerHTML = `
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-500 mb-1">Usuario a eliminar</label>
+                <p class="text-gray-800 font-medium">${user ? user.name : 'N/A'}</p>
+                <p class="text-gray-600 text-sm">${user ? user.email : 'N/A'}</p>
+            </div>
+            <p class="text-red-600 mb-4">⚠️ Esta acción es irreversible. ¿Estás seguro de que deseas eliminar este usuario y todos sus datos?</p>
+        `;
+    }
+}
+
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+    } else {
+        input.type = 'password';
+    }
+}
+
+function hideAdminModal() {
+    const modal = document.getElementById('adminModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    currentAdminAction = null;
+    currentAdminUserId = null;
+}
+
+async function handleAdminAction() {
+    if (!currentAdminUserId || !currentAdminAction) return;
+
+    try {
+        let response;
+        let body = {};
+
+        if (currentAdminAction === 'resetPassword') {
+            const newPassword = document.getElementById('adminNewPassword').value;
+            if (!newPassword || newPassword.length < 6) {
+                showAlert('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+            body = { newPassword };
+            response = await fetch(`${API_URL}/admin/users/${currentAdminUserId}/password`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+        } else if (currentAdminAction === 'changeEmail') {
+            const newEmail = document.getElementById('adminNewEmail').value;
+            if (!newEmail) {
+                showAlert('El email es requerido', 'error');
+                return;
+            }
+            body = { newEmail };
+            response = await fetch(`${API_URL}/admin/users/${currentAdminUserId}/email`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+        } else if (currentAdminAction === 'delete') {
+            response = await fetch(`${API_URL}/admin/users/${currentAdminUserId}`, {
+                method: 'DELETE'
+            });
+        }
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showAlert(data.message, 'success');
+            hideAdminModal();
+            loadAdminUsers();
+        } else {
+            showAlert(data.message || 'Error en la acción', 'error');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'error');
+    }
+}
+
+// Agregar event listeners para admin modal
+document.addEventListener('DOMContentLoaded', () => {
+    const closeAdminModal = document.getElementById('closeAdminModal');
+    const confirmAdminAction = document.getElementById('confirmAdminAction');
+
+    if (closeAdminModal) {
+        closeAdminModal.addEventListener('click', hideAdminModal);
+    }
+    if (confirmAdminAction) {
+        confirmAdminAction.addEventListener('click', handleAdminAction);
+    }
+});
