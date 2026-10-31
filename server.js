@@ -21,9 +21,9 @@ app.use(require('express-session')({
   saveUninitialized: true,
   cookie: {
     maxAge: 24 * 60 * 60 * 1000,
-    secure: process.env.NODE_ENV === 'production', // true en producción (HTTPS)
+    secure: false, // false para que funcione tanto en HTTP como HTTPS
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // none en producción para cross-domain
+    sameSite: 'lax' // lax funciona en ambos casos
   }
 }));
 
