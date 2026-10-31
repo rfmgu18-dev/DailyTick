@@ -6,6 +6,9 @@ const { startDeadlineScheduler } = require('./backend/services/deadlineNotifier'
 
 const app = express();
 
+// Confiar en proxy para sesiones en producción (Render)
+app.set('trust proxy', 1);
+
 connectDB();
 
 app.use(express.json());
@@ -18,9 +21,9 @@ app.use(require('express-session')({
   saveUninitialized: true,
   cookie: {
     maxAge: 24 * 60 * 60 * 1000,
-    secure: false,
+    secure: process.env.NODE_ENV === 'production', // true en producción (HTTPS)
     httpOnly: true,
-    sameSite: 'lax'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // none en producción para cross-domain
   }
 }));
 
