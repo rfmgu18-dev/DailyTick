@@ -1343,7 +1343,9 @@ async function loadCalendar() {
     const month = currentCalendarDate.getMonth();
 
     try {
-        const response = await fetch(`${API_URL}/stats/month/${year}/${month}`);
+        // Agregar timestamp para evitar cache del navegador
+        const timestamp = Date.now();
+        const response = await fetch(`${API_URL}/stats/month/${year}/${month}?t=${timestamp}`);
         const data = await response.json();
 
         if (response.ok) {
